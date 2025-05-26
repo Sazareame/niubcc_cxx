@@ -6,12 +6,12 @@
 namespace niubcc{
 
 class Error{
-private:
-  std::string msg;
+protected:
+  char const* msg;
 public:
-  Error(std::string msg): msg(std::move(msg)){};
+  Error(char const* msg): msg(msg){};
   Error(Error const&) = delete;
-  Error(Error&& oth) noexcept: msg(std::move(oth.msg)){};
+  Error(Error&& oth) noexcept = default;
   Error& operator=(Error const&) = delete;
   Error& operator=(Error&&) = delete;
   virtual ~Error() = default;

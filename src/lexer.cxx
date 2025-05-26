@@ -96,11 +96,11 @@ Lexer::lex_ident_or_kw(Token& token){
 std::string
 LexerError::to_string()const{
   auto length = std::snprintf(
-    0, 0, "Lexical Error at line %u, col %d: ", line, col);
+    0, 0, "Lexical Error at line %u, col %d: %s\n", line, col, msg);
   std::string formatted(length, '\0');
   std::snprintf(
     formatted.data(),
-    length + 1,"Lexical Error at line %u, col %d: ", line, col
+    length + 1,"Lexical Error at line %u, col %d: %s\n", line, col, msg
   );
   return formatted;
 }

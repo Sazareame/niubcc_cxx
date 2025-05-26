@@ -5,12 +5,12 @@
 
 namespace niubcc{
 
-class LexerError: public Error{
+class LexerError: Error{
 private:
   unsigned col;
   unsigned line;
 public:
-  LexerError(std::string msg, unsigned col, unsigned line):
+  LexerError(char const* msg, unsigned col, unsigned line):
   Error(msg), col(col), line(line){};
   std::string to_string() const override;
 };
