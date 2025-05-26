@@ -1,0 +1,94 @@
+#include <cctype>
+#include <cstring>
+#include <cstdio>
+#include "lexer.hxx"
+
+namespace niubcc{
+
+void
+Lexer::tokenize(){
+}
+
+Expected<bool, LexerError>
+Lexer::lex_one_token(){
+  cur_ptr = text_ptr;
+  if(!skip_whitespace()) return false;
+
+  if(tok_pos == tok_max_len){
+    tok_max_len *= 2;
+    tokens.reserve(tok_max_len);
+  }
+  Token& token = tokens[tok_pos++];
+  token.init();
+
+  if(std::isdigit(*cur_ptr)) return lex_number(token);
+  if(std::isalpha(*cur_ptr)) return lex_ident_or_kw(token);
+
+  token.p_text = cur_ptr;
+  token.len = 1;
+  switch(*cur_ptr){
+    case '(': token.type = TokenType::lparen; break;
+    case ')': token.type = TokenType::rparen; break;
+    case '{': token.type = TokenType::punct_lbrace; break;
+    case '}': token.type = TokenType::punct_rbrace; break;
+    case ';': token.type = TokenType::punct_semicol; break;
+    default: return LexerError("Unexpected character", col, line);
+  }
+  ++text_ptr;
+  ++col;
+  return true;
+}
+
+bool
+Lexer::skip_whitespace(){
+  while(std::isspace(*cur_ptr))
+    if(*cur_ptr++ == '\n') ++line;
+  text_ptr = cur_ptr;
+  return *cur_ptr == EOF ? false : true;
+}
+
+bool
+Lexer::lex_number(Token& token){
+  while(std::isdigit(*cur_ptr)) ++cur_ptr;
+  token.p_text = text_ptr;
+  token.len = static_cast<unsigned>(cur_ptr - text_ptr);
+  token.type = TokenType::li_int;
+  token.raw_literal = text_ptr;
+  token.addtional_len = token.len;
+  text_ptr = cur_ptr;
+  return *cur_ptr == EOF ? false : true;
+}
+
+bool
+Lexer::lex_ident_or_kw(Token& token){
+  while(std::isalnum(*cur_ptr)) ++cur_ptr;
+  token.p_text = text_ptr;
+  token.len = static_cast<unsigned>(cur_ptr - text_ptr);
+  if(std::strncmp(text_ptr, "int", token.len) == 0)
+    token.type = TokenType::kw_int;
+  else if(std::strncmp(text_ptr, "return", token.len) == 0)
+    token.type = TokenType::kw_ret;
+  else if(std::strncmp(text_ptr, "void", token.len) == 0)
+    token.type = TokenType::kw_void;
+  else{
+    token.type = TokenType::ident;
+    token.raw_indent = text_ptr;
+    token.addtional_len = token.len;
+  }
+  text_ptr = cur_ptr;
+  return *cur_ptr == EOF ? false : true;
+}
+
+std::string
+LexerError::to_string()const{
+  auto length = std::snprintf(
+    0, 0, "Lexical Error at line %u, col %d: ", line, col);
+  std::string formatted(length, '\0');
+  std::snprintf(
+    formatted.data(),
+    length + 1,"Lexical Error at line %u, col %d: ", line, col
+  );
+  return formatted;
+}
+
+}
