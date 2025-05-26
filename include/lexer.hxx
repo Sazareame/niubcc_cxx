@@ -68,6 +68,8 @@ private:
   bool lex_number(Token& token);
   bool lex_ident_or_kw(Token& token);
 
+  static void err_handler(LexerError const& err);
+
 public:
   Lexer(char const* _ptr, unsigned _tok_max_len):
   text_ptr(_ptr), tok_max_len(_tok_max_len), tokens(_tok_max_len){};

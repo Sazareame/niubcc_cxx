@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <type_traits>
 
 namespace niubcc{
 
@@ -19,7 +20,7 @@ public:
 };
 
 template<class T, class E,
-typename=std::enable_if_t<std::is_base_of_v<Error, E> > >
+class=std::enable_if_t<std::is_base_of_v<Error, E> > >
 class Expected{
 private:
   bool has_error;
@@ -37,8 +38,16 @@ public:
   }
   Expected(Expected<T, E> const&) = delete;
   Expected& operator=(Expected<T, E> const&) = delete;
-  Expected(Expected<T, E>&& oth) = delete;
-  Expected& operator=(Expected<T, E>&&) = delete;
+  Expected(Expected<T, E>&& oth) noexcept: has_error(oth.has_error){
+    if(has_error) new(&error) std::unique_ptr(std::move(oth.error));
+    else new(&value) T(std::move(oth.value));
+  }
+  Expected& operator=(Expected<T, E>&& oth){
+    if(this == &oth) return *this;
+    this->~Expected();
+    new (this) Expected(std::move(oth));
+    return  *this;
+  }
 
   T unwrap(){
     if(has_error){
@@ -49,7 +58,17 @@ public:
   }
 
   bool is_ok() const{
+    return !has_error;
+  }
+
+  bool is_err() const{
     return has_error;
+  }
+
+  template<class F, class=std::enable_if_t<std::is_invocable_v<F, E> > >
+  void handle_err(F&& f){
+    if(!has_error) return;
+    f(*error);
   }
 
 };

@@ -6,7 +6,20 @@
 namespace niubcc{
 
 void
+Lexer::err_handler(LexerError const& err){
+  std::string msg = err.to_string();
+  std::fwrite(msg.data(), 1, msg.size(), stderr);
+  std::terminate();
+}
+
+void
 Lexer::tokenize(){
+  while(1){
+    auto res = lex_one_token();
+    if(res.is_err())
+      res.handle_err(Lexer::err_handler);
+    if(!res.unwrap()) break;
+  }
 }
 
 Expected<bool, LexerError>
