@@ -6,11 +6,12 @@
 namespace niubcc{
 
 void
-Lexer::err_handler(LexerError const& err){
+ Lexer::err_handler(LexerError const& err){
   std::string msg = err.to_string();
   std::fwrite(msg.data(), 1, msg.size(), stderr);
+  std::fputc('\n', stderr);
   std::terminate();
-}
+ }
 
 void
 Lexer::tokenize(){

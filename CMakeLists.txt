@@ -11,16 +11,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(niubcc
-  src/niub.cxx
-)
+# add_executable(niubcc
+#   src/niub.cxx
+# )
 
-target_sources(niubcc PRIVATE
-  src/token.cxx
+add_library(niubcc STATIC
   src/lexer.cxx
+  src/niub.cxx
   src/token.cxx
 )
 
-target_include_directories(niubcc PRIVATE include)
+target_include_directories(niubcc PUBLIC include)
 
 target_compile_features(niubcc PRIVATE cxx_std_17)
+
+enable_testing()
+add_subdirectory(test)
