@@ -26,4 +26,5 @@ target_include_directories(niubcc PUBLIC include)
 
 target_compile_features(niubcc PUBLIC cxx_std_17)
 
-add_subdirectory(test)
+enable_testing()
+add_subdirectory(tests)

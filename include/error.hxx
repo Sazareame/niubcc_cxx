@@ -35,6 +35,7 @@ public:
   error(std::make_unique<E>(std::move(err))), has_error(true){};
   ~Expected(){
     if(!has_error) value.~T();
+    else std::destroy_at(&error);
   }
   Expected(Expected<T, E> const&) = delete;
   Expected& operator=(Expected<T, E> const&) = delete;
@@ -51,10 +52,18 @@ public:
 
   T unwrap(){
     if(has_error){
-      fprintf(stderr, "Unwrap a Expected which contains Error");
+      fprintf(stderr, "Unwrap a Expected which contains Error.\n");
       std::terminate();
     }
     return std::move(value);
+  }
+
+  std::unique_ptr<E> expect_err(){
+    if(!has_error){
+      fprintf(stderr, "Call `expect_err` on a Expected which contains Value.\n");
+      std::terminate();
+    }
+    return std::move(error);
   }
 
   bool is_ok() const{
