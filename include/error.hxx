@@ -26,7 +26,7 @@ private:
   bool has_error;
   union{
     T value;
-    std::unique_ptr<Error> error;
+    std::unique_ptr<E> error;
   };
 public:
   Expected(T&& value):

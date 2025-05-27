@@ -44,14 +44,33 @@ Buffer::operator=(Buffer&& oth) noexcept{
   return *this;
 }
 
-Buffer
+Expected<Buffer, BufferError>
 Buffer::from_file(char const* file_name){
   FILE* file = std::fopen(file_name, "r");
+  if(!file) return BufferError("cannot open file", file_name);
+
+  std::fseek(file, 0, SEEK_END);
+  auto size = std::ftell(file);
+
+  Buffer buffer(size + 1);
+  auto read = std::fread(buffer.data, 1, size, file);
+  if(read != static_cast<unsigned long>(size)){
+    std::fclose(file);
+    return BufferError("Failed to read file", file_name);
+  }
+
+  *buffer.data = EOF;
+  return buffer;
 }
 
 char const*
 Buffer::get_start(){
+  return data;
+}
 
+unsigned long
+Buffer::get_length()const{
+  return capacity - 1;
 }
 
 }

@@ -13,7 +13,7 @@ struct Args{
 static Args
 parse_args(int argc, char const** argv){
   if(argc < 2){
-    fprintf(stderr, "Not enough arguments.");
+    fprintf(stderr, "NIUB Not enough arguments.");
     exit(1);
   }
 

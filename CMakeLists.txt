@@ -17,13 +17,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(niubcc STATIC
   src/lexer.cxx
-  src/niub.cxx
+  # src/niub.cxx
   src/token.cxx
+  src/buffer.cxx
 )
 
 target_include_directories(niubcc PUBLIC include)
 
-target_compile_features(niubcc PRIVATE cxx_std_17)
+target_compile_features(niubcc PUBLIC cxx_std_17)
 
-enable_testing()
 add_subdirectory(test)

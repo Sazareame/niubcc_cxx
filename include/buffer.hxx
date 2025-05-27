@@ -16,7 +16,7 @@ public:
 class Buffer{
 private:
   char* data;
-  unsigned capacity;
+  unsigned long capacity;
   Buffer(unsigned capacity): capacity(capacity), data(new char[capacity]){};
 public:
   ~Buffer(){
@@ -27,8 +27,9 @@ public:
   Buffer& operator=(Buffer const& oth);
   Buffer& operator=(Buffer&& oth) noexcept;
   
-  static Buffer from_file(char const* file_name);
+  static Expected<Buffer, BufferError> from_file(char const* file_name);
   char const* get_start();
+  unsigned long get_length()const;
 };
 
 }
