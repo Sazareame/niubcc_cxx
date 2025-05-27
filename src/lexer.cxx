@@ -93,6 +93,11 @@ Lexer::lex_ident_or_kw(Token& token){
   return *cur_ptr == EOF ? false : true;
 }
 
+std::vector<Token> const&
+Lexer::get_tokens()const{
+  return tokens;
+}
+
 std::string
 LexerError::to_string()const{
   auto length = std::snprintf(

@@ -15,19 +15,11 @@ public:
   std::string to_string() const override;
 };
 
+#define TOK(X, S) X,
 enum class TokenType: unsigned short{
-  unknown,
-  ident,
-  kw_int,
-  kw_void,
-  kw_ret,
-  lparen,
-  rparen,
-  punct_lbrace,
-  punct_rbrace,
-  punct_semicol,
-  li_int,
+#include "token.def"
 };
+#undef TOK
 
 class Lexer;
 
@@ -76,6 +68,8 @@ public:
   ~Lexer() = default;
   
   void tokenize();
+
+  std::vector<Token> const& get_tokens()const;
 };
 
 }
