@@ -61,7 +61,7 @@ Lexer::skip_whitespace(){
   while(std::isspace(*cur_ptr)){
     if(*cur_ptr++ == '\n'){
       ++line;
-      col = 0;
+      col = 1;
     }else{
       ++col;
     }
