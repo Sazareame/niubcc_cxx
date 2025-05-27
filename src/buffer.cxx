@@ -1,18 +1,12 @@
 #include "buffer.hxx"
 #include <cstring>
+#include "utils.hxx"
 
 namespace niubcc{
 
 std::string
 BufferError::to_string()const{
-  auto length = std::snprintf(
-    0, 0, "Buffer Error with raw file: %s, %s\n", filename, msg);
-  std::string formatted(length, '\0');
-  std::snprintf(
-    formatted.data(),
-    length + 1, "Buffer Error with raw file: %s, %s\n", filename, msg
-  );
-  return formatted;
+  return utils::fmt("Buffer Error with raw file: %s, %s\n", filename, msg);
 }
 
 Buffer::Buffer(Buffer const& oth){

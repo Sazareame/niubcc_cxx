@@ -1,6 +1,53 @@
 #include "lexer.hxx"
+#include "utils.hxx"
+#include <cstring>
+#include <cstdio>
 
 namespace niubcc{
+
+#define TOK(X, S) S,
+char const* Token::token_name_map[]{
+#include "token.def"
+};
+#undef TOK
+
+bool
+Token::is_keyword()const{
+  return (std::strncmp(
+    token_name_map[static_cast<unsigned>(type)], "kw", 2) == 0);
+}
+bool
+Token::is_literal()const{
+  return (std::strncmp(
+    token_name_map[static_cast<unsigned>(type)], "li", 2) == 0
+  );
+}
+
+std::optional<std::string>
+Token::fmt()const{
+  if(type == TokenType::unknown){
+    return std::nullopt;
+  }
+  if(is_keyword()) return utils::fmt(
+    "Keyword@%s (%u, %u)",
+    token_name_map[static_cast<unsigned>(type)],
+    col, line
+  );
+  else if(is_literal()) return utils::fmt(
+    "Literal@%s@%.*s (%u, %u)",
+    token_name_map[static_cast<unsigned>(type)],
+    addtional_len, raw_literal, col, line);
+  else if(is_ident()) return utils::fmt(
+    "Identifier@%s@%.*s (%u, %u)",
+    token_name_map[static_cast<unsigned>(type)],
+    addtional_len, raw_indent, col, line);
+  else return utils::fmt(
+    "Token@%s (%u, %u)",
+    token_name_map[static_cast<unsigned>(type)],
+    col, line
+  );
+
+}
 
 void
 Token::init(){

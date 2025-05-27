@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <optional>
 #include "error.hxx"
 
 namespace niubcc{
@@ -29,6 +30,8 @@ private:
   char const* p_text;
   TokenType type;
   unsigned len;
+  unsigned col;
+  unsigned line;
 
   union{
     char const* raw_literal;
@@ -37,11 +40,18 @@ private:
 
   unsigned addtional_len;
 
+  static char const* token_name_map[];
+
   void init(); 
+
+  std::optional<std::string> fmt()const;
 
 public:
   Token() = default;
   bool is(TokenType _type) const{return type == _type;}
+  bool is_ident()const{return type == TokenType::ident;};
+  bool is_keyword()const;
+  bool is_literal()const;
 
 };
 
@@ -70,6 +80,7 @@ public:
   void tokenize();
 
   std::vector<Token> const& get_tokens()const;
+  void display_all_tokens()const;
 };
 
 }

@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdio>
 #include "lexer.hxx"
+#include "utils.hxx"
 
 namespace niubcc{
 
@@ -40,6 +41,8 @@ Lexer::lex_one_token(){
 
   token.p_text = cur_ptr;
   token.len = 1;
+  token.col = col;
+  token.line = line;
   switch(*cur_ptr){
     case '(': token.type = TokenType::lparen; break;
     case ')': token.type = TokenType::rparen; break;
@@ -55,8 +58,14 @@ Lexer::lex_one_token(){
 
 bool
 Lexer::skip_whitespace(){
-  while(std::isspace(*cur_ptr))
-    if(*cur_ptr++ == '\n') ++line;
+  while(std::isspace(*cur_ptr)){
+    if(*cur_ptr++ == '\n'){
+      ++line;
+      col = 0;
+    }else{
+      ++col;
+    }
+  }
   text_ptr = cur_ptr;
   return *cur_ptr == EOF ? false : true;
 }
@@ -66,10 +75,13 @@ Lexer::lex_number(Token& token){
   while(std::isdigit(*cur_ptr)) ++cur_ptr;
   token.p_text = text_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
+  token.col = col;
+  token.line = line;
   token.type = TokenType::li_int;
   token.raw_literal = text_ptr;
   token.addtional_len = token.len;
   text_ptr = cur_ptr;
+  col += token.len;
   return *cur_ptr == EOF ? false : true;
 }
 
@@ -78,6 +90,8 @@ Lexer::lex_ident_or_kw(Token& token){
   while(std::isalnum(*cur_ptr)) ++cur_ptr;
   token.p_text = text_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
+  token.col = col;
+  token.line = line;
   if(std::strncmp(text_ptr, "int", token.len) == 0)
     token.type = TokenType::kw_int;
   else if(std::strncmp(text_ptr, "return", token.len) == 0)
@@ -89,6 +103,7 @@ Lexer::lex_ident_or_kw(Token& token){
     token.raw_indent = text_ptr;
     token.addtional_len = token.len;
   }
+  col += token.len;
   text_ptr = cur_ptr;
   return *cur_ptr == EOF ? false : true;
 }
@@ -100,14 +115,18 @@ Lexer::get_tokens()const{
 
 std::string
 LexerError::to_string()const{
-  auto length = std::snprintf(
-    0, 0, "Lexical Error at line %u, col %d: %s\n", line, col, msg);
-  std::string formatted(length, '\0');
-  std::snprintf(
-    formatted.data(),
-    length + 1,"Lexical Error at line %u, col %d: %s\n", line, col, msg
-  );
-  return formatted;
+  return utils::fmt("Lexical Error at line %u, col %d: %s\n", line, col, msg);
+}
+
+void 
+Lexer::display_all_tokens()const{
+  for(auto const& token : tokens){
+    try{
+      fprintf(stdout, "%s\n", token.fmt()->c_str());
+    }catch(...){
+      break;
+    }
+  }
 }
 
 }

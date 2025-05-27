@@ -20,6 +20,7 @@ add_library(niubcc STATIC
   # src/niub.cxx
   src/token.cxx
   src/buffer.cxx
+  src/utils.cxx
 )
 
 target_include_directories(niubcc PUBLIC include)
