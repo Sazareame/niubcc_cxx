@@ -58,7 +58,7 @@ public:
 class Lexer{
 private:
   unsigned col{1};
-  unsigned line{0};
+  unsigned line{1};
   unsigned tok_pos{0};
   unsigned tok_max_len;
   char const* text_ptr;
@@ -69,6 +69,7 @@ private:
   bool skip_whitespace();
   bool lex_number(Token& token);
   bool lex_ident_or_kw(Token& token);
+  bool is_valid_ident_char(char c);
 
   static void err_handler(LexerError const& err);
 
@@ -81,6 +82,9 @@ public:
 
   std::vector<Token> const& get_tokens()const;
   void display_all_tokens()const;
+
+  unsigned get_token_vec_len()const{return tok_pos;}
+  void reset_token_vec_len(){tok_pos = 0;}
 };
 
 }

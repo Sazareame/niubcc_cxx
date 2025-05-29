@@ -25,6 +25,7 @@ Buffer&
 Buffer::operator=(Buffer const& oth){
   if(this == &oth) return *this;
   if(data) delete[] data;
+  capacity = oth.capacity;
   data = new char[capacity];
   std::memcpy(data, oth.data, capacity * sizeof(char));
   return *this;
@@ -61,7 +62,7 @@ Buffer::from_file(char const* file_name){
     return BufferError("failed to read file", file_name);
   }
 
-  *buffer.data = EOF;
+  *(buffer.data + size) = EOF;
   return buffer;
 }
 

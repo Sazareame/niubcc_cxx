@@ -49,6 +49,7 @@ Lexer::lex_one_token(){
     case '{': token.type = TokenType::punct_lbrace; break;
     case '}': token.type = TokenType::punct_rbrace; break;
     case ';': token.type = TokenType::punct_semicol; break;
+    case '_': return lex_ident_or_kw(token);
     default: return LexerError("Unexpected character", col, line);
   }
   ++text_ptr;
@@ -87,7 +88,7 @@ Lexer::lex_number(Token& token){
 
 bool
 Lexer::lex_ident_or_kw(Token& token){
-  while(std::isalnum(*cur_ptr)) ++cur_ptr;
+  while(is_valid_ident_char(*cur_ptr)) ++cur_ptr;
   token.p_text = text_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
   token.col = col;
@@ -107,6 +108,10 @@ Lexer::lex_ident_or_kw(Token& token){
   text_ptr = cur_ptr;
   return *cur_ptr == EOF ? false : true;
 }
+bool 
+Lexer::is_valid_ident_char(char c){
+  return std::isalnum(c) || c == '_';
+}
 
 std::vector<Token> const&
 Lexer::get_tokens()const{
@@ -120,13 +125,8 @@ LexerError::to_string()const{
 
 void 
 Lexer::display_all_tokens()const{
-  for(auto const& token : tokens){
-    try{
-      fprintf(stdout, "%s\n", token.fmt()->c_str());
-    }catch(...){
-      break;
-    }
-  }
+  for(auto i = 0; i < tok_pos; ++i)
+      fprintf(stdout, "%s\n", tokens[i].fmt()->c_str());
 }
 
 }
