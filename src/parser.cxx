@@ -1,5 +1,6 @@
 #include "parser.hxx"
 #include "utils.hxx"
+#include <cassert>
 
 namespace niubcc{
 
@@ -73,19 +74,59 @@ Parser::parse_retstmt(){
     return ParseError("Expected keyword return",
       get_cur_tok_col(), get_cur_tok_line());
   
+  auto expr = parse_expr();
+  if(expr.is_err()) return expr.unwrap_err();
+
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expcted semicolumn",
+      get_cur_tok_col(), get_cur_tok_line());
+
+  return std::make_shared<ast::RetStmt>(expr.unwrap());
+}
+
+Expected<Ptr<ast::Expr>, ParseError>
+Parser::parse_expr(){
+  if(next_is(TokenType::op_decre))
+    return ParseError("We do not support decrement operator yet",
+      get_cur_tok_col(), get_cur_tok_line());
+  if(next_is(TokenType::op_bitnot, TokenType::op_minus, TokenType::op_decre)){
+    auto unary = parse_unary();
+    if(unary.is_err()) return unary.unwrap_err();
+    return std::shared_ptr<ast::Expr>(unary.unwrap());
+  }
+
+  if(match(TokenType::lparen)){
+    auto expr = parse_expr();
+    if(expr.is_err()) return expr.unwrap_err();
+    if(!match(TokenType::rparen))
+      return ParseError("Expected (", get_cur_tok_col(), get_cur_tok_line());
+    return expr;
+  }
+
   if(!match(TokenType::li_int))
-    return ParseError("Expected integer literal",
+    return ParseError("Expected expression",
       get_cur_tok_col(), get_cur_tok_line());
   
   char const* val = tokens[tok_pos - 1].get_name();
   unsigned val_len = tokens[tok_pos - 1].get_name_len();
 
-  if(!match(TokenType::punct_semicol))
-    return ParseError("Expcted semicolumn",
-      get_cur_tok_col(), get_cur_tok_line());
-  
-  Ptr<ast::Constant> exp = std::make_shared<ast::Constant>(val, val_len);
-  return std::make_shared<ast::RetStmt>(exp);
+  return 
+    std::shared_ptr<ast::Expr>(std::make_shared<ast::Constant>(val, val_len));
+}
+
+Expected<Ptr<ast::Unary>, ParseError>
+Parser::parse_unary(){
+  ast::OpType op_type;
+  switch(get_cur_tok_type()){
+    case TokenType::op_bitnot: op_type = ast::OpType::op_bitnot; break;
+    case TokenType::op_minus: op_type = ast::OpType::op_minus; break;
+    case TokenType::op_decre: op_type = ast::OpType::op_decre; break;
+    default: assert(("unreachable",0));
+  }
+  ++tok_pos; //NOTE
+  auto expr = parse_expr();
+  if(expr.is_err()) return expr.unwrap_err();
+  return std::make_shared<ast::Unary>(op_type, expr.unwrap());
 }
 
 }

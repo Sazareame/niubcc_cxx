@@ -30,7 +30,7 @@ AsmNodeBuilder::build_funcdef(Ptr<ast::FunctionDef> node){
 void 
 AsmNodeBuilder::build_retstmt(Ptr<ast::RetStmt> node){
   codes.emplace_back("\tmovl\t");
-  build_constant(node->ret_val);
+  // build_constant(node->ret_val);
   codes.emplace_back(", \%eax\n");
   codes.emplace_back(utils::fmt("\tret\n"));
 }

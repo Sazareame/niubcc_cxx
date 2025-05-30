@@ -1,10 +1,19 @@
 #pragma once
 #include <memory>
+#include "lexer.hxx"
 
 namespace niubcc{
 template<class T> using Ptr = std::shared_ptr<T>;
 
 namespace ast{
+
+#define TOK(X, S)
+#define OP(X, S) X,
+enum class OpType{
+#include "token.def"
+};
+#undef TOK
+#undef OP
 
 struct FunctionDef;
 struct Stmt;
@@ -23,6 +32,19 @@ struct Stmt: BaseNode{
   virtual std::string print() = 0;
 };
 
+struct Expr: BaseNode{
+  Expr() = default;
+  virtual ~Expr() = default;
+  virtual std::string print() = 0;
+};
+
+struct Unary: Expr{
+  OpType op_type;
+  Ptr<Expr> expr;
+  Unary(OpType op_type, Ptr<Expr> expr): op_type(op_type), expr(expr){}
+  std::string print()override;
+};
+
 struct Program: BaseNode{
   Ptr<FunctionDef> funcdef;
   Program(Ptr<FunctionDef> funcdef): funcdef(funcdef){};
@@ -39,26 +61,18 @@ struct FunctionDef: BaseNode{
 };
 
 struct RetStmt: Stmt{
-  Ptr<Constant> ret_val;
-  RetStmt(Ptr<Constant> ret_val): ret_val(ret_val){};
+  Ptr<Expr> ret_val;
+  RetStmt(Ptr<Expr> ret_val): ret_val(ret_val){};
   std::string print()override;
 };
 
-struct Constant: BaseNode{
+struct Constant: Expr{
   char const* value;
   unsigned value_len;
   Constant(char const* value, unsigned value_len)
   :value(value), value_len(value_len){};
   std::string print()override;
 };
-
-inline void foo(std::shared_ptr<BaseNode> nd){
-
-}
-
-inline void foo2(std::shared_ptr<Program> nd){
-  foo(nd);
-}
 
 }
 }

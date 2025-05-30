@@ -6,10 +6,12 @@
 namespace niubcc{
 
 #define TOK(X, S) S,
+#define OP(X, S) S,
 char const* Token::token_name_map[]{
 #include "token.def"
 };
 #undef TOK
+#undef OP
 
 bool
 Token::is_keyword()const{

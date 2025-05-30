@@ -17,10 +17,12 @@ public:
 };
 
 #define TOK(X, S) X,
+#define OP(X, S) X,
 enum class TokenType: unsigned short{
 #include "token.def"
 };
 #undef TOK
+#undef OP
 
 class Lexer;
 
@@ -67,6 +69,9 @@ public:
       return addtional_len;
     return 0;
   }
+  TokenType get_type()const{
+    return type;
+  } 
 };
 
 class Lexer{
