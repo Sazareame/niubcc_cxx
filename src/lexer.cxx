@@ -40,7 +40,6 @@ Lexer::lex_one_token(){
   if(std::isalpha(*cur_ptr)) return lex_ident_or_kw(token);
 
   token.p_text = cur_ptr;
-  token.len = 1;
   token.col = col;
   token.line = line;
   switch(*cur_ptr){
@@ -49,11 +48,20 @@ Lexer::lex_one_token(){
     case '{': token.type = TokenType::punct_lbrace; break;
     case '}': token.type = TokenType::punct_rbrace; break;
     case ';': token.type = TokenType::punct_semicol; break;
+    case '~': token.type = TokenType::op_bitnot; break;
+    case '-': 
+      if(*(cur_ptr + 1) == '-'){
+        token.type = TokenType::op_decre;
+        ++cur_ptr;
+      }else token.type = TokenType::op_minus;
+      break;
     case '_': return lex_ident_or_kw(token);
     default: return LexerError("Unexpected character", col, line);
   }
-  ++text_ptr;
-  ++col;
+  ++cur_ptr;
+  token.len = static_cast<unsigned>(cur_ptr - text_ptr);
+  text_ptr = cur_ptr;
+  col += token.len;
   return true;
 }
 
