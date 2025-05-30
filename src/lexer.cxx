@@ -118,6 +118,11 @@ Lexer::get_tokens()const{
   return tokens;
 }
 
+std::vector<Token>&
+Lexer::get_tokens_out(){
+  return tokens;
+}
+
 std::string
 LexerError::to_string()const{
   return utils::fmt("Lexical Error at line %u, col %d: %s\n", line, col, msg);

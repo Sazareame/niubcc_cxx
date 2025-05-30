@@ -21,6 +21,9 @@ add_library(niubcc STATIC
   src/token.cxx
   src/buffer.cxx
   src/utils.cxx
+  src/ast.cxx
+  src/parser.cxx
+  src/codegen.cxx
 )
 
 target_include_directories(niubcc PUBLIC include)

@@ -58,12 +58,13 @@ public:
     return std::move(value);
   }
 
-  std::unique_ptr<E> expect_err(){
+  E unwrap_err(){
     if(!has_error){
-      fprintf(stderr, "Call `expect_err` on a Expected which contains Value.\n");
+      fprintf(stderr, "UnwrapErr a Expected which contains Value.\n");
       std::terminate();
     }
-    return std::move(error);
+    return std::move(*error);
+
   }
 
   bool is_ok() const{

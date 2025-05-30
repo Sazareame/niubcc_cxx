@@ -53,6 +53,20 @@ public:
   bool is_keyword()const;
   bool is_literal()const;
 
+  unsigned get_col()const{return col;};
+  unsigned get_line()const{return line;};
+  char const* get_name()const{
+    if(type == TokenType::ident)
+      return raw_indent;
+    if(is_literal())
+      return raw_literal;
+    return 0;
+  }
+  unsigned get_name_len()const{
+    if(is_ident() || is_literal())
+      return addtional_len;
+    return 0;
+  }
 };
 
 class Lexer{
@@ -81,6 +95,7 @@ public:
   void tokenize();
 
   std::vector<Token> const& get_tokens()const;
+  std::vector<Token>& get_tokens_out();
   void display_all_tokens()const;
 
   unsigned get_token_vec_len()const{return tok_pos;}
