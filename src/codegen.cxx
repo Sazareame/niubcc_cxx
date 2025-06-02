@@ -41,7 +41,12 @@ AsmGenerator::generate(Ptr<ir::Inst> node){
 
 void 
 AsmGenerator::generate(Ptr<ir::Unary> node){
-  auto dst = generate(node->src, node->dst);
+  auto dst = generate(node->dst);
+  if(gen_mov_if_need(node->src, node->dst))
+    codes.emplace_back(utils::fmt("movl\t%%r10d, %s\n", dst.c_str()));
+  else
+    codes.emplace_back(
+      utils::fmt("movl\t%s, %s\n", generate(node->src).c_str(), dst.c_str()));
   switch(node->op){
     case ast::OpType::op_bitnot: 
       codes.emplace_back(utils::fmt("notl\t%s\n", dst.c_str())); break;
@@ -79,20 +84,15 @@ AsmGenerator::generate(Ptr<ir::Constant> node){
   return utils::fmt("$%.*s", node->val_len, node->val);
 }
 
-std::string
-AsmGenerator::generate(Ptr<ir::Val> src, Ptr<ir::Val> dst){
+bool
+AsmGenerator::gen_mov_if_need(Ptr<ir::Val> src, Ptr<ir::Val> dst){
   auto p = std::dynamic_pointer_cast<ir::Var>(src);
   auto q = std::dynamic_pointer_cast<ir::Var>(dst);
   if(p && q){
     codes.emplace_back(utils::fmt("movl\t%s, \%r10d\n", generate(p).c_str()));
-    auto dst_val = generate(q);
-    codes.emplace_back(utils::fmt("movl\t\%r10d, %s\n", dst_val.c_str()));
-    return dst_val;
+    return true;
   }
-  auto dst_val = generate(dst);
-  codes.emplace_back(utils::fmt(
-    "movl\t%s, %s\n", generate(src).c_str(), dst_val.c_str()));
-  return dst_val;
+  return false;
 }
 
 void

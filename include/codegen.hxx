@@ -16,7 +16,7 @@ private:
     stack_allocated = stack_allocated > stack_pos ? stack_allocated : stack_pos;
     return stack_pos;
   }
-  std::string generate(Ptr<ir::Val>, Ptr<ir::Val>);
+  bool gen_mov_if_need(Ptr<ir::Val>, Ptr<ir::Val>);
 public:
   void generate(Ptr<ir::Base>);
   void generate(Ptr<ir::Program>);
