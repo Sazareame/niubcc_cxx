@@ -24,6 +24,7 @@ add_library(niubcc STATIC
   src/ast.cxx
   src/parser.cxx
   src/codegen.cxx
+  src/tacky.cxx
 )
 
 target_include_directories(niubcc PUBLIC include)

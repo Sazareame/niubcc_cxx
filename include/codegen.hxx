@@ -1,21 +1,33 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "ast.hxx"
+#include "tacky.hxx"
 
 namespace niubcc{
 
 namespace codegen{
 
-class AsmNodeBuilder{
+class AsmGenerator{
 private:
   std::vector<std::string> codes{};
+  unsigned stack_allocated{0};
+  unsigned allocate_stack(unsigned tmp){
+    unsigned stack_pos = (tmp + 1) * 4;
+    stack_allocated = stack_allocated > stack_pos ? stack_allocated : stack_pos;
+    return stack_pos;
+  }
+  std::string generate(Ptr<ir::Val>, Ptr<ir::Val>);
 public:
-  void build(Ptr<ast::BaseNode> node);
-  void build_programe(Ptr<ast::Program> node);
-  void build_funcdef(Ptr<ast::FunctionDef> node);
-  void build_retstmt(Ptr<ast::RetStmt> node);
-  void build_constant(Ptr<ast::Constant> node);
+  void generate(Ptr<ir::Base>);
+  void generate(Ptr<ir::Program>);
+  void generate(Ptr<ir::FunctionDef>);
+  void generate(Ptr<ir::Inst>);
+  void generate(Ptr<ir::Unary>);
+  void generate(Ptr<ir::Ret>);
+  std::string generate(Ptr<ir::Val>);
+  std::string generate(Ptr<ir::Var>);
+  std::string generate(Ptr<ir::Constant>);
+
   void emie_code(char const* filename)const;
 };
 }

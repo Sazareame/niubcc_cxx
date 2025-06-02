@@ -65,6 +65,11 @@ Parser::parse_funcdef(){
   if(!match(TokenType::punct_rbrace))
     return ParseError("Expected }", get_cur_tok_col(), get_cur_tok_line());
 
+  if(!next_is(TokenType::unknown)){
+    return ParseError("Only support one main function defination",
+      get_cur_tok_col(), get_cur_tok_line());
+  }
+
   return std::make_shared<ast::FunctionDef>(name, name_len, body.unwrap());
 }
 
