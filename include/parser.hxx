@@ -22,6 +22,10 @@ private:
 
   static void error_handler(ParseError const& err);
 
+  static unsigned op_precedence[];
+
+  ast::OpType convert_token_to_op(TokenType tokentype)const;
+
   unsigned get_cur_tok_col()const{return tokens[tok_pos].get_col();};
   unsigned get_cur_tok_line()const{return tokens[tok_pos].get_line();};
   TokenType get_cur_tok_type()const{return tokens[tok_pos].get_type();};
@@ -40,10 +44,19 @@ private:
     return next_is(type) || next_is(types...);
   }
 
+  unsigned get_op_precedence(TokenType tokentype)const{
+    return op_precedence[static_cast<unsigned>(convert_token_to_op(tokentype))];
+  }
+
+  unsigned get_op_precedence(ast::OpType optype)const{
+    return op_precedence[static_cast<unsigned>(optype)];
+  }
+
   Expected<Ptr<ast::Program>, ParseError> parse_program();
   Expected<Ptr<ast::FunctionDef>, ParseError> parse_funcdef();
   Expected<Ptr<ast::RetStmt>, ParseError> parse_retstmt();
-  Expected<Ptr<ast::Expr>, ParseError> parse_expr();
+  Expected<Ptr<ast::Expr>, ParseError> parse_expr(unsigned precedence=0);
+  Expected<Ptr<ast::Expr>, ParseError> parse_factor();
   Expected<Ptr<ast::Unary>, ParseError> parse_unary();
 public:
   Parser(Lexer& lexer);

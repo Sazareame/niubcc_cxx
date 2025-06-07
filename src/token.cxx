@@ -6,7 +6,7 @@
 namespace niubcc{
 
 #define TOK(X, S) S,
-#define OP(X, S) S,
+#define OP(X, S, P) S,
 char const* Token::token_name_map[]{
 #include "token.def"
 };

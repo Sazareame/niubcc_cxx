@@ -6,7 +6,7 @@ namespace niubcc{
 namespace ast{
 
 #define TOK(X, STR)
-#define OP(X, STR) STR,
+#define OP(X, STR, P) STR,
 static char const* map_op_name[] = {
 #include "token.def"
 };
@@ -19,6 +19,16 @@ Unary::print(){
     "Unary(\noperator=%s\nexpr=%s\n)",
     map_op_name[static_cast<unsigned>(op_type)],
     expr->print().c_str()
+  );
+}
+
+std::string
+Binary::print(){
+  return utils::fmt(
+    "Binary(\noperator=%s\nlhs=%s\nrhs=%s\n)",
+    map_op_name[static_cast<unsigned>(op_type)],
+    lhs->print().c_str(),
+    rhs->print().c_str()
   );
 }
 

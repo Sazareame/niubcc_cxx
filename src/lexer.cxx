@@ -49,6 +49,10 @@ Lexer::lex_one_token(){
     case '}': token.type = TokenType::punct_rbrace; break;
     case ';': token.type = TokenType::punct_semicol; break;
     case '~': token.type = TokenType::op_bitnot; break;
+    case '+': token.type = TokenType::op_plus; break;
+    case '*': token.type = TokenType::op_asterisk; break;
+    case '/': token.type = TokenType::op_slash; break;
+    case '%': token.type = TokenType::op_percent; break;
     case '-': 
       if(*(cur_ptr + 1) == '-'){
         token.type = TokenType::op_decre;

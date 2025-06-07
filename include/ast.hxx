@@ -8,7 +8,7 @@ template<class T> using Ptr = std::shared_ptr<T>;
 namespace ast{
 
 #define TOK(X, S)
-#define OP(X, S) X,
+#define OP(X, S, P) X,
 enum class OpType{
 #include "token.def"
 };
@@ -42,6 +42,15 @@ struct Unary: Expr{
   OpType op_type;
   Ptr<Expr> expr;
   Unary(OpType op_type, Ptr<Expr> expr): op_type(op_type), expr(expr){}
+  std::string print()override;
+};
+
+struct Binary: Expr{
+  OpType op_type;
+  Ptr<Expr> lhs;
+  Ptr<Expr> rhs;
+  Binary(OpType op_type, Ptr<Expr> lhs, Ptr<Expr> rhs):
+  op_type(op_type), lhs(lhs), rhs(rhs){}
   std::string print()override;
 };
 

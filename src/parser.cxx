@@ -4,6 +4,14 @@
 
 namespace niubcc{
 
+#define TOK(X, S) 
+#define OP(X, S, P) P,
+unsigned Parser::op_precedence[]{
+#include "token.def"
+};
+#undef TOK
+#undef OP
+
 std::string
 ParseError::to_string()const{
   return utils::fmt("Parse Error at line %u, col %u: %s", line, col, msg);
@@ -16,6 +24,17 @@ Parser::error_handler(ParseError const& err){
   std::fputc('\n', stderr);
   std::terminate();
 }
+
+#define TOK(X, R)
+#define OP(X, R, P) case TokenType::X: return ast::OpType::X;
+ast::OpType
+Parser::convert_token_to_op(TokenType tokentype)const{
+  switch(tokentype){
+    #include "token.def"  
+  }
+}
+#undef TOK
+#undef OP
 
 Parser::Parser(Lexer& lexer){
   tok_pos = 0;
@@ -73,6 +92,7 @@ Parser::parse_funcdef(){
   return std::make_shared<ast::FunctionDef>(name, name_len, body.unwrap());
 }
 
+// Stmt -> return Expr ;
 Expected<Ptr<ast::RetStmt>, ParseError>
 Parser::parse_retstmt(){
   if(!match(TokenType::kw_ret))
@@ -89,8 +109,36 @@ Parser::parse_retstmt(){
   return std::make_shared<ast::RetStmt>(expr.unwrap());
 }
 
+// Expr -> Factor | Expr op Expr
 Expected<Ptr<ast::Expr>, ParseError>
-Parser::parse_expr(){
+Parser::parse_expr(unsigned precedence){
+  auto lhs_res = parse_factor();
+  if(lhs_res.is_err()) return lhs_res.unwrap_err();
+
+  ast::OpType op;
+  Ptr<ast::Expr> lhs = lhs_res.unwrap();
+
+  while(next_is(TokenType::op_plus,
+                TokenType::op_minus,
+                TokenType::op_asterisk,
+                TokenType::op_slash,
+                TokenType::op_percent) 
+        &&
+        get_op_precedence(get_cur_tok_type()) >= precedence
+        )
+  {
+    op = convert_token_to_op(get_cur_tok_type());
+    ++tok_pos;
+    auto rhs = parse_expr(get_op_precedence(op) + 1);
+    if(rhs.is_err()) return rhs.unwrap_err();
+    lhs = std::make_shared<ast::Binary>(op, lhs, rhs.unwrap());
+  }
+  return lhs;
+}
+
+// Factor -> int | Unary | (Expr)
+Expected<Ptr<ast::Expr>, ParseError>
+Parser::parse_factor(){
   if(next_is(TokenType::op_decre))
     return ParseError("We do not support decrement operator yet",
       get_cur_tok_col(), get_cur_tok_line());
@@ -119,6 +167,7 @@ Parser::parse_expr(){
     std::shared_ptr<ast::Expr>(std::make_shared<ast::Constant>(val, val_len));
 }
 
+// Unary -> - | ~ Factor
 Expected<Ptr<ast::Unary>, ParseError>
 Parser::parse_unary(){
   ast::OpType op_type;
@@ -129,7 +178,7 @@ Parser::parse_unary(){
     default: assert(("unreachable",0));
   }
   ++tok_pos; //NOTE
-  auto expr = parse_expr();
+  auto expr = parse_factor();
   if(expr.is_err()) return expr.unwrap_err();
   return std::make_shared<ast::Unary>(op_type, expr.unwrap());
 }
