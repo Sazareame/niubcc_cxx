@@ -62,6 +62,19 @@ struct Unary: Inst{
   void print()override;
 };
 
+struct Binary: Inst{
+  ast::OpType op;
+  Ptr<Val> src_1;
+  Ptr<Val> src_2;
+  Ptr<Val> dst; 
+  Binary(ast::OpType op, 
+    Ptr<Val> src_1,
+    Ptr<Val> src_2,
+    Ptr<Val> dst,
+    Ptr<Inst> next=0):Inst(next), op(op), src_1(src_1), src_2(src_2), dst(dst){}
+  void print()override;
+};
+
 struct Var: Val{
   unsigned number;
   Var(unsigned number): number(number){};
@@ -90,6 +103,7 @@ public:
   void build(Ptr<ast::RetStmt>);
   Ptr<Val> build(Ptr<ast::Expr>);
   Ptr<Var> build(Ptr<ast::Unary>);
+  Ptr<Var> build(Ptr<ast::Binary>);
   Ptr<Constant> build(Ptr<ast::Constant>);
 };
 

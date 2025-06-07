@@ -46,6 +46,8 @@ AstBuilder::build(Ptr<ast::Expr> node){
     return build(p);
   else if(auto p = std::dynamic_pointer_cast<ast::Unary>(node))
     return build(p);
+  else if(auto p = std::dynamic_pointer_cast<ast::Binary>(node))
+    return build(p);
   return 0;
 }
 
@@ -59,6 +61,16 @@ AstBuilder::build(Ptr<ast::Unary> node){
   auto src = build(node->expr);
   auto dest = std::make_shared<Var>(get_tmp_val());
   auto inst = std::make_shared<Unary>(node->op_type, src, dest);
+  append_cur_insts(inst);
+  return dest;
+}
+
+Ptr<Var>
+AstBuilder::build(Ptr<ast::Binary> node){
+  auto src_1 = build(node->rhs);
+  auto src_2 = build(node->lhs);
+  auto dest = std::make_shared<Var>(get_tmp_val());
+  auto inst = std::make_shared<Binary>(node->op_type, src_1, src_2, dest);
   append_cur_insts(inst);
   return dest;
 }
@@ -96,10 +108,19 @@ Constant::print(){
 
 void
 Unary::print(){
-  std::cout << utils::fmt("Unary(%u, %s, %s)\n",
-    static_cast<unsigned>(op), src->print().c_str(), dst->print().c_str());
+  std::cout << utils::fmt("Unary(%s, %s, %s)\n",
+    ast::map_op_name[static_cast<unsigned>(op)],
+    src->print().c_str(), dst->print().c_str());
 }
 
+void
+Binary::print(){
+  std::cout << utils::fmt("Binary(%s, %s, %s, %s)\n",
+    ast::map_op_name[static_cast<unsigned>(op)],
+    src_1->print().c_str(),
+    src_2->print().c_str(),
+    dst->print().c_str());
+}
 
 }
 }

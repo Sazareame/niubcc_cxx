@@ -15,6 +15,14 @@ enum class OpType{
 #undef TOK
 #undef OP
 
+#define TOK(X, STR)
+#define OP(X, STR, P) STR,
+inline char const* map_op_name[] = {
+#include "token.def"
+};
+#undef TOK
+#undef OP
+
 struct FunctionDef;
 struct Stmt;
 struct RetStmt;

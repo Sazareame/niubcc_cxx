@@ -5,14 +5,6 @@
 namespace niubcc{
 namespace ast{
 
-#define TOK(X, STR)
-#define OP(X, STR, P) STR,
-static char const* map_op_name[] = {
-#include "token.def"
-};
-#undef TOK
-#undef OP
-
 std::string
 Unary::print(){
   return utils::fmt(
