@@ -6,6 +6,17 @@
 namespace niubcc{
 
 namespace codegen{
+enum class OperandType{
+  Imm,
+  Reg,
+  Mem,
+};
+
+struct Operand{
+  OperandType type;
+  std::string repr;
+  Operand(OperandType type, std::string const& repr): type(type), repr(repr){}
+};
 
 class AsmGenerator{
 private:
@@ -16,7 +27,22 @@ private:
     stack_allocated = stack_allocated > stack_pos ? stack_allocated : stack_pos;
     return stack_pos;
   }
-  bool gen_mov_if_need(Ptr<ir::Val>, Ptr<ir::Val>);
+
+  Operand get_operand(Ptr<ir::Val>);
+
+  void emit_mov(Operand const&, Operand const&);
+
+  std::string alloc_tmp_reg(bool flag)const{
+    if(flag) return "%%r10d";
+    return "%%r11d";
+  }
+
+  void emit_bin_op(std::string const&, Operand const&, Operand const&);
+
+  void gen_mul_inst(Ptr<ir::Binary>);
+  void gen_div_inst(Ptr<ir::Binary>);
+  void gen_bin_inst(Ptr<ir::Binary>);
+
 public:
   void generate(Ptr<ir::Base>);
   void generate(Ptr<ir::Program>);
@@ -24,6 +50,7 @@ public:
   void generate(Ptr<ir::Inst>);
   void generate(Ptr<ir::Unary>);
   void generate(Ptr<ir::Ret>);
+  void generate(Ptr<ir::Binary>);
   std::string generate(Ptr<ir::Val>);
   std::string generate(Ptr<ir::Var>);
   std::string generate(Ptr<ir::Constant>);

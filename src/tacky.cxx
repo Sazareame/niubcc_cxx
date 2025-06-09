@@ -67,8 +67,10 @@ AstBuilder::build(Ptr<ast::Unary> node){
 
 Ptr<Var>
 AstBuilder::build(Ptr<ast::Binary> node){
-  auto src_1 = build(node->rhs);
-  auto src_2 = build(node->lhs);
+  // Note that we evaluate expr form right hand
+  // but for some operations (such as sub and div), the lhs should come first.
+  auto src_2 = build(node->rhs);
+  auto src_1 = build(node->lhs);
   auto dest = std::make_shared<Var>(get_tmp_val());
   auto inst = std::make_shared<Binary>(node->op_type, src_1, src_2, dest);
   append_cur_insts(inst);
