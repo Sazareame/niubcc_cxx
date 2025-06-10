@@ -142,7 +142,10 @@ Parser::parse_factor(){
   if(next_is(TokenType::op_decre))
     return ParseError("We do not support decrement operator yet",
       get_cur_tok_col(), get_cur_tok_line());
-  if(next_is(TokenType::op_bitnot, TokenType::op_minus, TokenType::op_decre)){
+  if(next_is(TokenType::op_incre))
+    return ParseError("We do not support increment operator yet",
+      get_cur_tok_col(), get_cur_tok_line());
+  if(next_is(TokenType::op_bitnot, TokenType::op_minus)){
     auto unary = parse_unary();
     if(unary.is_err()) return unary.unwrap_err();
     return std::shared_ptr<ast::Expr>(unary.unwrap());
@@ -174,8 +177,7 @@ Parser::parse_unary(){
   switch(get_cur_tok_type()){
     case TokenType::op_bitnot: op_type = ast::OpType::op_bitnot; break;
     case TokenType::op_minus: op_type = ast::OpType::op_minus; break;
-    case TokenType::op_decre: op_type = ast::OpType::op_decre; break;
-    default: assert(("unreachable",0));
+    default: assert((0 && "unreachable"));
   }
   ++tok_pos; //NOTE
   auto expr = parse_factor();
