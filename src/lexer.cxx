@@ -99,6 +99,7 @@ Lexer::lex_one_token(){
         token.type = TokenType::op_ne;
         ++cur_ptr;
       }else token.type = TokenType::op_not;
+      break;
     case '-': 
       if(*(cur_ptr + 1) == '-'){
         token.type = TokenType::op_decre;
