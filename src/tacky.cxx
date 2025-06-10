@@ -66,7 +66,59 @@ AstBuilder::build(Ptr<ast::Unary> node){
 }
 
 Ptr<Var>
+AstBuilder::build_logic_and(Ptr<ast::Binary> node){
+  auto dest = std::make_shared<Var>(get_tmp_val());
+   
+  auto false_val = std::make_shared<Constant>("0", 1);
+  auto true_val = std::make_shared<Constant>("1", 1);
+   
+  auto false_l = std::make_shared<Label>(get_label());
+  auto end_l = std::make_shared<Label>(get_label());
+
+  auto src_1 = build(node->lhs);                                      // ins of e1
+  append_cur_insts(std::make_shared<Jz>(false_l->number, src_1));     // jz (e1) false_l
+
+  auto src_2 = build(node->rhs);                                      // ins of e2
+  append_cur_insts(std::make_shared<Jz>(false_l->number, src_2));     // jz (e2) false_l
+
+  append_cur_insts(std::make_shared<Copy>(true_val, dest));           // mov $1, dst
+  append_cur_insts(std::make_shared<Jmp>(end_l->number));             // jmp end
+  append_cur_insts(false_l);                                          // false_l:
+  append_cur_insts(std::make_shared<Copy>(false_val, dest));          // mov $0, dst
+  append_cur_insts(end_l);                                            // end:
+  return dest;
+}
+
+Ptr<Var>
+AstBuilder::build_logic_or(Ptr<ast::Binary> node){
+  auto dest = std::make_shared<Var>(get_tmp_val());
+   
+  auto false_val = std::make_shared<Constant>("0", 1);
+  auto true_val = std::make_shared<Constant>("1", 1);
+   
+  auto true_l = std::make_shared<Label>(get_label());
+  auto end_l = std::make_shared<Label>(get_label());
+
+  auto src_1 = build(node->lhs);                                      // ins of e1
+  append_cur_insts(std::make_shared<Jnz>(true_l->number, src_1));     // jnz (e1) true_l
+
+  auto src_2 = build(node->rhs);                                      // ins of e2
+  append_cur_insts(std::make_shared<Jnz>(true_l->number, src_2));     // jz (e2) false_l
+
+  append_cur_insts(std::make_shared<Copy>(false_val, dest));          // mov $0, dst
+  append_cur_insts(std::make_shared<Jmp>(end_l->number));             // jmp end
+  append_cur_insts(true_l);                                           // true_l:
+  append_cur_insts(std::make_shared<Copy>(true_val, dest));           // mov $1, dst
+  append_cur_insts(end_l);                                            // end:
+  return dest;
+}
+
+Ptr<Var>
 AstBuilder::build(Ptr<ast::Binary> node){
+  if(node->op_type == ast::OpType::op_or)
+    return build_logic_or(node);
+  if(node->op_type == ast::OpType::op_and)
+    return build_logic_and(node);
   // Note that we evaluate expr form right hand
   // but for some operations (such as sub and div), the lhs should come first.
   auto src_2 = build(node->rhs);
@@ -122,6 +174,31 @@ Binary::print(){
     src_1->print().c_str(),
     src_2->print().c_str(),
     dst->print().c_str());
+}
+
+void
+Label::print(){
+  std::cout << utils::fmt("Lable(l_%u)\n", number);
+}
+
+void
+Jmp::print(){
+  std::cout << utils::fmt("Jmp(l_%u)\n", label);
+}
+
+void
+Jnz::print(){
+  std::cout << utils::fmt("Jnz(l_%u, %s)\n", label, cond->print().c_str());
+}
+
+void
+Jz::print(){
+  std::cout << utils::fmt("Jz(l_%u, %s)\n", label, cond->print().c_str());
+}
+
+void
+Copy::print(){
+  std::cout << utils::fmt("Copy(%s, %s)\n", src->print().c_str(), dst->print().c_str());
 }
 
 }

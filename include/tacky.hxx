@@ -75,6 +75,39 @@ struct Binary: Inst{
   void print()override;
 };
 
+struct Label: Inst{
+  unsigned number;
+  Label(unsigned number, Ptr<Inst> next=0): Inst(next), number(number){};
+  void print()override;
+};
+
+struct Jmp: Inst{
+  unsigned label;
+  Jmp(unsigned label, Ptr<Inst> next=0): Inst(next), label(label){};
+  void print()override;
+};
+
+struct Jnz: Inst{
+  unsigned label;
+  Ptr<Val> cond;
+  Jnz(unsigned label, Ptr<Val> cond, Ptr<Inst> next=0):Inst(next), label(label), cond(cond){};
+  void print()override;
+};
+
+struct Jz: Inst{
+  unsigned label;
+  Ptr<Val> cond;
+  Jz(unsigned label, Ptr<Val> cond, Ptr<Inst> next=0):Inst(next), label(label), cond(cond){};
+  void print()override;
+};
+
+struct Copy: Inst{
+  Ptr<Val> src;
+  Ptr<Val> dst;
+  Copy(Ptr<Val> src, Ptr<Val> dst, Ptr<Inst> next=0): Inst(next), src(src), dst(dst){};
+  void print()override;
+};
+
 struct Var: Val{
   unsigned number;
   Var(unsigned number): number(number){};
@@ -93,9 +126,18 @@ class AstBuilder{
   unsigned get_tmp_val(){
     return tmp_val++;
   }
+
+  unsigned label_number{0};
+  unsigned get_label(){
+    return label_number++;
+  }
+
   Ptr<Inst> cur_insts{0};
   Ptr<Inst> cur_insts_tail{0};
   void append_cur_insts(Ptr<Inst>);
+
+  Ptr<Var> build_logic_and(Ptr<ast::Binary>);
+  Ptr<Var> build_logic_or(Ptr<ast::Binary>);
 public:
   Ptr<Program> build(Ptr<ast::BaseNode>);
   Ptr<Program> build(Ptr<ast::Program>);
