@@ -31,7 +31,7 @@ Lexer::lex_one_token(){
 
   if(tok_pos == tok_max_len){
     tok_max_len *= 2;
-    tokens.reserve(tok_max_len);
+    tokens.resize(tok_max_len);
   }
   Token& token = tokens[tok_pos++];
   token.init();
@@ -95,7 +95,7 @@ Lexer::lex_one_token(){
       break;
     case '^': token.type = TokenType::op_bitxor; break;
     case '!': 
-      if(*(cur_ptr + 1) == '!'){
+      if(*(cur_ptr + 1) == '='){
         token.type = TokenType::op_ne;
         ++cur_ptr;
       }else token.type = TokenType::op_not;
