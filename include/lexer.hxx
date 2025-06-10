@@ -17,7 +17,7 @@ public:
 };
 
 #define TOK(X, S) X,
-#define OP(X, S, P) X,
+#define OP(X, S, P, B, U) X,
 enum class TokenType: unsigned short{
 #include "token.def"
 };

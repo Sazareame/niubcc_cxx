@@ -5,7 +5,7 @@
 namespace niubcc{
 
 #define TOK(X, S) 
-#define OP(X, S, P) P,
+#define OP(X, S, P, B, U) P,
 unsigned Parser::op_precedence[]{
 #include "token.def"
 };
@@ -25,8 +25,30 @@ Parser::error_handler(ParseError const& err){
   std::terminate();
 }
 
+#define TOK(X, R) case TokenType::X: return false;
+#define OP(X, R, P, B, U) case TokenType::X: return B;
+bool
+Parser::is_next_binary_op()const{
+  switch(get_cur_tok_type()){
+    #include "token.def"
+  }
+}
+#undef OP
+#undef TOK
+
+#define TOK(X, R) case TokenType::X: return false;
+#define OP(X, R, P, B, U) case TokenType::X: return U;
+bool
+Parser::is_next_unary_op()const{
+  switch(get_cur_tok_type()){
+    #include "token.def"
+  }
+}
+#undef OP
+#undef TOK
+
 #define TOK(X, R)
-#define OP(X, R, P) case TokenType::X: return ast::OpType::X;
+#define OP(X, R, P, B, U) case TokenType::X: return ast::OpType::X;
 ast::OpType
 Parser::convert_token_to_op(TokenType tokentype)const{
   switch(tokentype){
@@ -119,21 +141,7 @@ Parser::parse_expr(unsigned precedence){
   ast::OpType op;
   Ptr<ast::Expr> lhs = lhs_res.unwrap();
 
-  while(next_is(TokenType::op_plus,
-                TokenType::op_minus,
-                TokenType::op_asterisk,
-                TokenType::op_slash,
-                TokenType::op_percent,
-                TokenType::op_bitand,
-                TokenType::op_bitor,
-                TokenType::op_bitxor,
-                TokenType::op_rshift,
-                TokenType::op_lshift
-              ) 
-        &&
-        get_op_precedence(get_cur_tok_type()) >= precedence
-        )
-  {
+  while(is_next_binary_op() && get_op_precedence(get_cur_tok_type()) >= precedence){
     op = convert_token_to_op(get_cur_tok_type());
     ++tok_pos;
     auto rhs = parse_expr(get_op_precedence(op) + 1);
@@ -152,7 +160,7 @@ Parser::parse_factor(){
   if(next_is(TokenType::op_incre))
     return ParseError("We do not support increment operator yet",
       get_cur_tok_col(), get_cur_tok_line());
-  if(next_is(TokenType::op_bitnot, TokenType::op_minus)){
+  if(is_next_unary_op()){
     auto unary = parse_unary();
     if(unary.is_err()) return unary.unwrap_err();
     return std::shared_ptr<ast::Expr>(unary.unwrap());
@@ -180,12 +188,7 @@ Parser::parse_factor(){
 // Unary -> - | ~ Factor
 Expected<Ptr<ast::Unary>, ParseError>
 Parser::parse_unary(){
-  ast::OpType op_type;
-  switch(get_cur_tok_type()){
-    case TokenType::op_bitnot: op_type = ast::OpType::op_bitnot; break;
-    case TokenType::op_minus: op_type = ast::OpType::op_minus; break;
-    default: assert((0 && "unreachable"));
-  }
+  auto op_type = convert_token_to_op(get_cur_tok_type());
   ++tok_pos; //NOTE
   auto expr = parse_factor();
   if(expr.is_err()) return expr.unwrap_err();

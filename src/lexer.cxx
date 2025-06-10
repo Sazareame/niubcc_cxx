@@ -62,17 +62,43 @@ Lexer::lex_one_token(){
       if(*(cur_ptr + 1) == '<'){
         token.type = TokenType::op_lshift;
         ++cur_ptr;
-      }else return LexerError("no lessthan now...", col, line);
+      }else if(*(cur_ptr + 1) == '='){
+        token.type = TokenType::op_le;
+        ++cur_ptr;
+      }else token.type = TokenType::op_lt;
       break;
     case '>':
       if(*(cur_ptr + 1) == '>'){
         token.type = TokenType::op_rshift;
         ++cur_ptr;
-      }else return LexerError("no greaterthan now...", col, line);
+      }else if(*(cur_ptr + 1) == '='){
+        token.type = TokenType::op_ge;
+        ++cur_ptr;
+      }else token.type = TokenType::op_gt;
       break;
-    case '&': token.type = TokenType::op_bitand; break;
-    case '|': token.type = TokenType::op_bitor; break;
+    case '=': 
+      if(*(cur_ptr + 1) == '='){
+        token.type = TokenType::op_eq;
+        ++cur_ptr;
+      }else return LexerError("no assign yet...", col, line);
+    case '&': 
+      if(*(cur_ptr + 1) == '&'){
+        token.type = TokenType::op_and;
+        ++cur_ptr;
+      }else token.type = TokenType::op_bitand;
+      break;
+    case '|':
+      if(*(cur_ptr + 1) == '|'){
+        token.type = TokenType::op_or;
+        ++cur_ptr;
+      }else token.type = TokenType::op_bitor;
+      break;
     case '^': token.type = TokenType::op_bitxor; break;
+    case '!': 
+      if(*(cur_ptr + 1) == '!'){
+        token.type = TokenType::op_ne;
+        ++cur_ptr;
+      }else token.type = TokenType::op_not;
     case '-': 
       if(*(cur_ptr + 1) == '-'){
         token.type = TokenType::op_decre;

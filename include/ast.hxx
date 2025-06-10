@@ -8,7 +8,7 @@ template<class T> using Ptr = std::shared_ptr<T>;
 namespace ast{
 
 #define TOK(X, S)
-#define OP(X, S, P) X,
+#define OP(X, S, P, B, U) X,
 enum class OpType{
 #include "token.def"
 };
@@ -16,7 +16,7 @@ enum class OpType{
 #undef OP
 
 #define TOK(X, STR)
-#define OP(X, STR, P) STR,
+#define OP(X, STR, P, B, U) STR,
 inline char const* map_op_name[] = {
 #include "token.def"
 };
