@@ -136,6 +136,11 @@ AsmGenerator::gen_bin_inst(Ptr<ir::Binary> node){
   switch(node->op){
     case ast::OpType::op_plus: op_name = "addl"; break;
     case ast::OpType::op_minus: op_name = "subl"; break;
+    case ast::OpType::op_bitand: op_name = "andl"; break;
+    case ast::OpType::op_bitor: op_name = "orl"; break;
+    case ast::OpType::op_bitxor: op_name = "xorl"; break;
+    case ast::OpType::op_lshift: op_name = "shll"; break;
+    case ast::OpType::op_rshift: op_name = "sarl"; break;
   }
 
   emit_bin_op(op_name, actual_src_op, dst_op);

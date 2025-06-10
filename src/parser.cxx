@@ -32,6 +32,7 @@ Parser::convert_token_to_op(TokenType tokentype)const{
   switch(tokentype){
     #include "token.def"  
   }
+  assert("unreachable && 0");
 }
 #undef TOK
 #undef OP
@@ -122,7 +123,13 @@ Parser::parse_expr(unsigned precedence){
                 TokenType::op_minus,
                 TokenType::op_asterisk,
                 TokenType::op_slash,
-                TokenType::op_percent) 
+                TokenType::op_percent,
+                TokenType::op_bitand,
+                TokenType::op_bitor,
+                TokenType::op_bitxor,
+                TokenType::op_rshift,
+                TokenType::op_lshift
+              ) 
         &&
         get_op_precedence(get_cur_tok_type()) >= precedence
         )
