@@ -178,22 +178,22 @@ Binary::print(){
 
 void
 Label::print(){
-  std::cout << utils::fmt("Lable(l_%u)\n", number);
+  std::cout << utils::fmt("Lable(.L%u)\n", number);
 }
 
 void
 Jmp::print(){
-  std::cout << utils::fmt("Jmp(l_%u)\n", label);
+  std::cout << utils::fmt("Jmp(.L%u)\n", label);
 }
 
 void
 Jnz::print(){
-  std::cout << utils::fmt("Jnz(l_%u, %s)\n", label, cond->print().c_str());
+  std::cout << utils::fmt("Jnz(.L%u, %s)\n", label, cond->print().c_str());
 }
 
 void
 Jz::print(){
-  std::cout << utils::fmt("Jz(l_%u, %s)\n", label, cond->print().c_str());
+  std::cout << utils::fmt("Jz(.L%u, %s)\n", label, cond->print().c_str());
 }
 
 void

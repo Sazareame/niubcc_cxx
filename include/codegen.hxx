@@ -30,7 +30,7 @@ private:
 
   Operand get_operand(Ptr<ir::Val>);
 
-  void emit_mov(Operand const&, Operand const&);
+  void emit_mov_or_cmp(Operand const&, Operand const&, bool is_mov);
 
   std::string alloc_tmp_reg(bool flag)const{
     if(flag) return "%%r10d";
@@ -41,7 +41,9 @@ private:
 
   void gen_mul_inst(Ptr<ir::Binary>);
   void gen_div_inst(Ptr<ir::Binary>);
-  void gen_bin_inst(Ptr<ir::Binary>);
+  void gen_bin_inst(Ptr<ir::Binary>, std::string const&);
+  void gen_cond_inst(Ptr<ir::Binary>);
+  void gen_cond_inst(Ptr<ir::Unary>);
 
 public:
   void generate(Ptr<ir::Base>);
@@ -51,6 +53,11 @@ public:
   void generate(Ptr<ir::Unary>);
   void generate(Ptr<ir::Ret>);
   void generate(Ptr<ir::Binary>);
+  void generate(Ptr<ir::Copy>);
+  void generate(Ptr<ir::Jmp>);
+  void generate(Ptr<ir::Jnz>);
+  void generate(Ptr<ir::Jz>);
+  void generate(Ptr<ir::Label>);
   std::string generate(Ptr<ir::Val>);
   std::string generate(Ptr<ir::Var>);
   std::string generate(Ptr<ir::Constant>);
