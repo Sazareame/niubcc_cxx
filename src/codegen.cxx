@@ -15,18 +15,25 @@ AsmGenerator::get_operand(Ptr<ir::Val> val){
 }
 
 void
-AsmGenerator::emit_mov_or_cmp(Operand const& src, Operand const& dst, bool is_mov=true){
+AsmGenerator::emit_mov(Operand const& src, Operand const& dst){
   if(src.type == OperandType::Mem && dst.type == OperandType::Mem){
     codes.emplace_back(utils::fmt("movl\t%s, %r10d\n", src.repr.c_str()));
-    if(is_mov)
-      codes.emplace_back(utils::fmt("movl\t%r10d, %s\n", dst.repr.c_str()));
-    else
-      codes.emplace_back(utils::fmt("cmpl\t%r10d, %s\n", dst.repr.c_str()));
+    codes.emplace_back(utils::fmt("movl\t%r10d, %s\n", dst.repr.c_str()));
   }else{
-    if(is_mov)
-      codes.emplace_back(utils::fmt("movl\t%s, %s\n", src.repr.c_str(), dst.repr.c_str()));
-    else
-      codes.emplace_back(utils::fmt("cmpl\t%s, %s\n", src.repr.c_str(), dst.repr.c_str()));
+    codes.emplace_back(utils::fmt("movl\t%s, %s\n", src.repr.c_str(), dst.repr.c_str()));
+  }
+}
+
+void
+AsmGenerator::emit_cmp(Operand const& src, Operand const& dst){
+  if(dst.type == OperandType::Imm){
+    codes.emplace_back(utils::fmt("movl\t%s, %r11d\n", dst.repr.c_str()));
+    codes.emplace_back(utils::fmt("cmpl\t%s, %r11d\n", src.repr.c_str()));
+  }else if(src.type == OperandType::Mem && dst.type == OperandType::Mem){
+    codes.emplace_back(utils::fmt("movl\t%s, %r10d\n", src.repr.c_str()));
+    codes.emplace_back(utils::fmt("cmpl\t%r10d, %s\n", dst.repr.c_str()));
+  }else{
+    codes.emplace_back(utils::fmt("cmpl\t%s, %s\n", src.repr.c_str(), dst.repr.c_str()));
   }
 }
 
@@ -89,7 +96,7 @@ AsmGenerator::generate(Ptr<ir::Unary> node){
   auto src_op = get_operand(node->src);
   auto dst_op = get_operand(node->dst);
 
-  emit_mov_or_cmp(src_op, dst_op);
+  emit_mov(src_op, dst_op);
 
   switch(node->op){
     case ast::OpType::op_bitnot: 
@@ -108,9 +115,9 @@ AsmGenerator::gen_mul_inst(Ptr<ir::Binary> node){
   
   Operand temp_reg_op(OperandType::Reg, "%r11d");
   
-  emit_mov_or_cmp(src1_op, temp_reg_op);
+  emit_mov(src1_op, temp_reg_op);
   emit_bin_op("imul", src2_op, temp_reg_op);
-  emit_mov_or_cmp(temp_reg_op, dst_op);
+  emit_mov(temp_reg_op, dst_op);
 }
 
 void
@@ -119,20 +126,20 @@ AsmGenerator::gen_div_inst(Ptr<ir::Binary> node){
   auto src2_op = get_operand(node->src_2);
   auto dst_op = get_operand(node->dst);
   
-  emit_mov_or_cmp(src1_op, Operand(OperandType::Reg, "%eax"));
+  emit_mov(src1_op, Operand(OperandType::Reg, "%eax"));
   codes.emplace_back("cdq\n");
   
   if(src2_op.type == OperandType::Imm){
-    emit_mov_or_cmp(src2_op, Operand(OperandType::Reg, "%r10d"));
+    emit_mov(src2_op, Operand(OperandType::Reg, "%r10d"));
     codes.emplace_back("idivl\t %r10d\n");
   }else{
     codes.emplace_back(utils::fmt("idivl\t%s\n", src2_op.repr.c_str()));
   }
   
   if(node->op == ast::OpType::op_slash) {
-    emit_mov_or_cmp(Operand(OperandType::Reg, "%eax"), dst_op);
+    emit_mov(Operand(OperandType::Reg, "%eax"), dst_op);
   }else{
-    emit_mov_or_cmp(Operand(OperandType::Reg, "%edx"), dst_op);
+    emit_mov(Operand(OperandType::Reg, "%edx"), dst_op);
   }
 }
 
@@ -142,12 +149,12 @@ AsmGenerator::gen_bin_inst(Ptr<ir::Binary> node, std::string const& op_name){
   auto src2_op = get_operand(node->src_2);
   auto dst_op = get_operand(node->dst);
 
-  emit_mov_or_cmp(src1_op, dst_op);
+  emit_mov(src1_op, dst_op);
 
   auto actual_src_op = src2_op;
   if(src2_op.type == OperandType::Mem && dst_op.type == OperandType::Mem){
     actual_src_op = Operand(OperandType::Reg, "%r10d");
-    emit_mov_or_cmp(src2_op, actual_src_op);
+    emit_mov(src2_op, actual_src_op);
   }
 
   emit_bin_op(op_name, actual_src_op, dst_op);
@@ -181,9 +188,9 @@ AsmGenerator::gen_cond_inst(Ptr<ir::Binary> node){
   // setflag dst
   auto src1 = get_operand(node->src_1);
   auto src2 = get_operand(node->src_2);
-  emit_mov_or_cmp(src2, src1, false); // src1 and src2 could be both memory.
+  emit_cmp(src2, src1); // src1 and src2 could be both memory.
   auto dst = generate(node->dst);
-  codes.emplace_back(utils::fmt("xorl\t%s, %s\n", dst.c_str(), dst.c_str()));
+  codes.emplace_back(utils::fmt("movl\t$0, %s\n", dst.c_str()));
 
   std::string instuction;
   switch(node->op){
@@ -207,7 +214,7 @@ AsmGenerator::gen_cond_inst(Ptr<ir::Unary> node){
   // sete dst
   codes.emplace_back(utils::fmt("cmpl\t$0, %s\n", generate(node->src).c_str()));
   auto dst = generate(node->dst);
-  codes.emplace_back(utils::fmt("xorl\t%s, %s\n", dst.c_str(), dst.c_str()));
+  codes.emplace_back(utils::fmt("movl\t$0, %s\n", dst.c_str()));
   codes.emplace_back(utils::fmt("sete\t%s\n", dst.c_str()));
 }
 
@@ -219,20 +226,20 @@ AsmGenerator::generate(Ptr<ir::Jmp> node){
 void
 AsmGenerator::generate(Ptr<ir::Jnz> node){
   codes.emplace_back(utils::fmt("cmpl\t$0, %s\n", generate(node->cond).c_str()));
-  codes.emplace_back(utils::fmt("je\t.L%u\n", node->label));
+  codes.emplace_back(utils::fmt("jne\t.L%u\n", node->label));
 }
 
 void
 AsmGenerator::generate(Ptr<ir::Jz> node){
   codes.emplace_back(utils::fmt("cmpl\t$0, %s\n", generate(node->cond).c_str()));
-  codes.emplace_back(utils::fmt("jne\t.L%u\n", node->label));
+  codes.emplace_back(utils::fmt("je\t.L%u\n", node->label));
 }
 
 void
 AsmGenerator::generate(Ptr<ir::Copy> node){
   auto src = get_operand(node->src);
   auto dst = get_operand(node->dst);
-  emit_mov_or_cmp(src, dst);
+  emit_mov(src, dst);
 }
 
 void

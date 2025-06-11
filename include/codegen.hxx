@@ -30,7 +30,8 @@ private:
 
   Operand get_operand(Ptr<ir::Val>);
 
-  void emit_mov_or_cmp(Operand const&, Operand const&, bool is_mov);
+  void emit_mov(Operand const&, Operand const&);
+  void emit_cmp(Operand const&, Operand const&);
 
   std::string alloc_tmp_reg(bool flag)const{
     if(flag) return "%%r10d";
