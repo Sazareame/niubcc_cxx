@@ -101,18 +101,93 @@ Parser::parse_funcdef(){
   if(!match(TokenType::lparen, TokenType::rparen, TokenType::punct_lbrace))
     return ParseError("Syntax error", get_cur_tok_col(), get_cur_tok_line());
 
-  auto body = parse_retstmt();
-  if(body.is_err()) return body.unwrap_err();
+  auto blocks_res = parse_block();
+  // parse_block() return null ptr if the body is empty, e.g., int main(){}
+  if(blocks_res.is_err()) return blocks_res.unwrap_err();
+  auto blocks = blocks_res.unwrap();
+  auto cur = blocks;
 
+  while(cur){
+    auto res = parse_block();
+    if(res.is_err()) return res.unwrap_err();
+    cur->next = res.unwrap(); 
+    cur = cur->next;
+  }
+
+  // Checking the closed right brace
   if(!match(TokenType::punct_rbrace))
-    return ParseError("Expected }", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right brace after function body", get_cur_tok_col(), get_cur_tok_line());
 
   if(!next_is(TokenType::unknown)){
     return ParseError("Only support one main function defination",
       get_cur_tok_col(), get_cur_tok_line());
   }
 
-  return std::make_shared<ast::FunctionDef>(name, name_len, body.unwrap());
+  return std::make_shared<ast::FunctionDef>(name, name_len, blocks);
+}
+
+Expected<Ptr<ast::Block>, ParseError>
+Parser::parse_block(){
+  // Declaration
+  if(next_is(TokenType::kw_int)){
+    auto decl = parse_decl();
+    if(decl.is_err()) return decl.unwrap_err();
+    return std::shared_ptr<ast::Block>(decl.unwrap());
+  }
+  // Why use std::shared_ptr<ast::Block>() instead of std::make_shared<ast::Block>() ?
+  // 1. ast::Block is an abstract class, which could not be constructed.
+  // 2. Even if ast::Block is not abtract, in some compiler or context it may not compile
+  //    This is because decl.unwrap() is a rvalue and sometimes compiler will not choose to apply implict conversion.
+
+  // Statement
+  if(!next_is(TokenType::punct_rbrace)){
+    auto stmt = parse_stmt();
+    if(stmt.is_err()) return stmt.unwrap_err();
+    return std::shared_ptr<ast::Block>(stmt.unwrap());
+  }
+
+  // Empty. e.g., int main(){}
+  return std::shared_ptr<ast::Block>(0);
+}
+
+Expected<Ptr<ast::Decl>, ParseError>
+Parser::parse_decl(){
+  if(!match(TokenType::kw_int))
+    return ParseError("Expected type specifier, for now it is int", get_cur_tok_col(), get_cur_tok_line());
+  if(!match(TokenType::ident))
+    return ParseError("Expected variable name", get_cur_tok_col(), get_cur_tok_line());
+  auto decl = std::make_shared<ast::Decl>(tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len());
+  if(match(TokenType::op_assign)){
+    auto init = parse_expr();
+    if(init.is_err()) return init.unwrap_err();
+    decl->init = init.unwrap();
+  }
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicolumm after variable declatation", get_cur_tok_col(), get_cur_tok_line());
+  return decl;
+}
+
+Expected<Ptr<ast::Stmt>, ParseError>
+Parser::parse_stmt(){
+  if(next_is(TokenType::kw_ret)){
+    auto res = parse_retstmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
+  if(match(TokenType::punct_semicol))
+    return std::shared_ptr<ast::Stmt>(std::make_shared<ast::NullStmt>());
+  auto res = parse_exprstmt();
+  if(res.is_err()) return res.unwrap_err();
+  return std::shared_ptr<ast::Stmt>(res.unwrap());
+}
+
+Expected<Ptr<ast::ExprStmt>, ParseError>
+Parser::parse_exprstmt(){
+  auto expr = parse_expr();
+  if(expr.is_err()) return expr.unwrap_err();
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+  return std::make_shared<ast::ExprStmt>(expr.unwrap());
 }
 
 // Stmt -> return Expr ;
@@ -142,16 +217,21 @@ Parser::parse_expr(unsigned precedence){
   Ptr<ast::Expr> lhs = lhs_res.unwrap();
 
   while(is_next_binary_op() && get_op_precedence(get_cur_tok_type()) >= precedence){
-    op = convert_token_to_op(get_cur_tok_type());
-    ++tok_pos;
-    auto rhs = parse_expr(get_op_precedence(op) + 1);
-    if(rhs.is_err()) return rhs.unwrap_err();
-    lhs = std::make_shared<ast::Binary>(op, lhs, rhs.unwrap());
+    if(match(TokenType::op_assign)){
+      auto rhs = parse_expr(get_op_precedence(ast::OpType::op_assign));
+      lhs = std::make_shared<ast::Assign>(lhs, rhs.unwrap());
+    }else{
+      op = convert_token_to_op(get_cur_tok_type());
+      ++tok_pos;
+      auto rhs = parse_expr(get_op_precedence(op) + 1);
+      if(rhs.is_err()) return rhs.unwrap_err();
+      lhs = std::make_shared<ast::Binary>(op, lhs, rhs.unwrap());
+    }
   }
   return lhs;
 }
 
-// Factor -> int | Unary | (Expr)
+// Factor -> int | Unary | (Expr) | Var
 Expected<Ptr<ast::Expr>, ParseError>
 Parser::parse_factor(){
   if(next_is(TokenType::op_decre))
@@ -170,9 +250,13 @@ Parser::parse_factor(){
     auto expr = parse_expr();
     if(expr.is_err()) return expr.unwrap_err();
     if(!match(TokenType::rparen))
-      return ParseError("Expected (", get_cur_tok_col(), get_cur_tok_line());
+      return ParseError("Expected )", get_cur_tok_col(), get_cur_tok_line());
     return expr;
   }
+
+  if(match(TokenType::ident))
+    return std::shared_ptr<ast::Expr>(
+      std::make_shared<ast::Var>(tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len()));
 
   if(!match(TokenType::li_int))
     return ParseError("Expected expression",

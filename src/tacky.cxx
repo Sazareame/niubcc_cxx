@@ -29,7 +29,7 @@ AstBuilder::build(Ptr<ast::Program> node){
 
 Ptr<FunctionDef>
 AstBuilder::build(Ptr<ast::FunctionDef> node){
-  build(node->stmt);
+  // build(node->stmt);
   return std::make_shared<FunctionDef>(node->name, node->name_len, cur_insts);
 }
 

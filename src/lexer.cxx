@@ -22,6 +22,10 @@ Lexer::tokenize(){
       res.handle_err(Lexer::err_handler);
     if(!res.unwrap()) break;
   }
+  // In case the actual token number exactly equal to tokens' len
+  // Then it will lead to ub if the parser call method on the last token.
+  if(tok_pos == tok_max_len)
+    tokens.emplace_back();
 }
 
 Expected<bool, LexerError>
@@ -80,7 +84,8 @@ Lexer::lex_one_token(){
       if(*(cur_ptr + 1) == '='){
         token.type = TokenType::op_eq;
         ++cur_ptr;
-      }else return LexerError("no assign yet...", col, line);
+      }else token.type = TokenType::op_assign;
+      break;
     case '&': 
       if(*(cur_ptr + 1) == '&'){
         token.type = TokenType::op_and;
