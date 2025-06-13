@@ -1,6 +1,7 @@
 #pragma once
 #include "assert.h"
 #include "ast.h"
+#include <unordered_map>
 
 namespace niubcc{
 namespace ir{
@@ -123,7 +124,16 @@ struct Constant: Val{
 
 class AstBuilder{
   unsigned tmp_val{0};
+  std::unordered_map<char const*, unsigned> var_tmp_map{};
+  // for tmp var
   unsigned get_tmp_val(){
+    return tmp_val++;
+  }
+
+  // for named var
+  unsigned get_tmp_val(char const* name){
+    if(var_tmp_map.count(name)) return var_tmp_map[name];
+    var_tmp_map[name] = tmp_val;
     return tmp_val++;
   }
 
@@ -142,10 +152,16 @@ public:
   Ptr<Program> build(Ptr<ast::BaseNode>);
   Ptr<Program> build(Ptr<ast::Program>);
   Ptr<FunctionDef> build(Ptr<ast::FunctionDef>);
+  void build(Ptr<ast::Block>);
+  void build(Ptr<ast::Decl>);
+  void build(Ptr<ast::Stmt>);
   void build(Ptr<ast::RetStmt>);
+  void build(Ptr<ast::ExprStmt>);
   Ptr<Val> build(Ptr<ast::Expr>);
   Ptr<Var> build(Ptr<ast::Unary>);
   Ptr<Var> build(Ptr<ast::Binary>);
+  Ptr<Var> build(Ptr<ast::Assign>);
+  Ptr<Var> build(Ptr<ast::Var>);
   Ptr<Constant> build(Ptr<ast::Constant>);
 };
 

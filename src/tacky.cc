@@ -29,8 +29,39 @@ AstBuilder::build(Ptr<ast::Program> node){
 
 Ptr<FunctionDef>
 AstBuilder::build(Ptr<ast::FunctionDef> node){
-  // build(node->stmt);
+  auto cur = node->blocks;
+  while(cur){
+    build(cur);
+    cur = cur->next;
+  }
   return std::make_shared<FunctionDef>(node->name, node->name_len, cur_insts);
+}
+
+void
+AstBuilder::build(Ptr<ast::Block> node){
+  if(auto p = std::dynamic_pointer_cast<ast::Stmt>(node))
+    build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::Decl>(node))
+    build(p);
+  return;
+}
+
+void
+AstBuilder::build(Ptr<ast::Decl> node){
+  if(!node->init) return;
+  auto decled = std::make_shared<Var>(get_tmp_val(node->name));
+  auto init = build(node->init);
+  auto copy = std::make_shared<Copy>(init, decled);
+  append_cur_insts(copy);
+}
+
+void
+AstBuilder::build(Ptr<ast::Stmt> node){
+  if(auto p = std::dynamic_pointer_cast<ast::RetStmt>(node))
+    build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::ExprStmt>(node))
+    build(p);
+  return; 
 }
 
 void
@@ -40,13 +71,20 @@ AstBuilder::build(Ptr<ast::RetStmt> node){
   append_cur_insts(ret);
 }
 
+void
+AstBuilder::build(Ptr<ast::ExprStmt> node){
+  build(node->expr);
+}
+
 Ptr<Val>
 AstBuilder::build(Ptr<ast::Expr> node){
   if(auto p = std::dynamic_pointer_cast<ast::Constant>(node))
     return build(p);
-  else if(auto p = std::dynamic_pointer_cast<ast::Unary>(node))
+  if(auto p = std::dynamic_pointer_cast<ast::Var>(node))
     return build(p);
-  else if(auto p = std::dynamic_pointer_cast<ast::Binary>(node))
+  if(auto p = std::dynamic_pointer_cast<ast::Unary>(node))
+    return build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::Binary>(node))
     return build(p);
   return 0;
 }
@@ -54,6 +92,11 @@ AstBuilder::build(Ptr<ast::Expr> node){
 Ptr<Constant>
 AstBuilder::build(Ptr<ast::Constant> node){
   return std::make_shared<Constant>(node->value, node->value_len);
+}
+
+Ptr<Var>
+AstBuilder::build(Ptr<ast::Var> node){
+  return std::make_shared<Var>(get_tmp_val(node->name));
 }
 
 Ptr<Var>
