@@ -1,5 +1,5 @@
-#include "utils.hxx"
-#include "symbol_table.hxx"
+#include "utils.h"
+#include "symbol_table.h"
 #include <cstring>
 
 std::string

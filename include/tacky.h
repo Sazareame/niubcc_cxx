@@ -1,6 +1,6 @@
 #pragma once
 #include "assert.h"
-#include "ast.hxx"
+#include "ast.h"
 
 namespace niubcc{
 namespace ir{

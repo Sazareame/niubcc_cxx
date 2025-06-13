@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "lexer.hxx"
+#include "lexer.h"
 
 namespace niubcc{
 template<class T> using Ptr = std::shared_ptr<T>;

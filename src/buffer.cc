@@ -1,6 +1,6 @@
-#include "buffer.hxx"
+#include "buffer.h"
 #include <cstring>
-#include "utils.hxx"
+#include "utils.h"
 
 namespace niubcc{
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdio>
-#include <error.hxx>
+#include "error.h"
 
 namespace niubcc {
 

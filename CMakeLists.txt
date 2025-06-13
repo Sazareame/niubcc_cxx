@@ -16,16 +16,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # )
 
 add_library(niubcc STATIC
-  src/lexer.cxx
+  src/lexer.cc
   # src/niub.cxx
-  src/token.cxx
-  src/buffer.cxx
-  src/utils.cxx
-  src/ast.cxx
-  src/parser.cxx
-  src/codegen.cxx
-  src/tacky.cxx
-  src/symbol_table.cxx
+  src/token.cc
+  src/buffer.cc
+  src/utils.cc
+  src/ast.cc
+  src/parser.cc
+  src/codegen.cc
+  src/tacky.cc
+  src/symbol_table.cc
 )
 
 target_include_directories(niubcc PUBLIC include)

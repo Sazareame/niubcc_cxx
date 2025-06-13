@@ -1,4 +1,4 @@
-#include "utils.hxx"
+#include "utils.h"
 #include <cstdarg>
 
 namespace niubcc{

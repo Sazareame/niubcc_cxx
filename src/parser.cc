@@ -1,5 +1,5 @@
-#include "parser.hxx"
-#include "utils.hxx"
+#include "parser.h"
+#include "utils.h"
 #include <cassert>
 
 namespace niubcc{

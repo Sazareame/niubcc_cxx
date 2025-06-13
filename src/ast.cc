@@ -1,6 +1,6 @@
-#include "ast.hxx"
+#include "ast.h"
 #include <cstdio>
-#include "utils.hxx"
+#include "utils.h"
 
 namespace niubcc{
 namespace ast{

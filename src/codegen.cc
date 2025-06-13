@@ -1,5 +1,5 @@
-#include "codegen.hxx"
-#include "utils.hxx"
+#include "codegen.h"
+#include "utils.h"
 #include <fstream>
 
 

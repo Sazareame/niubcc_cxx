@@ -1,8 +1,8 @@
 #pragma once
-#include "lexer.hxx"
-#include "ast.hxx"
-#include "error.hxx"
-#include "symbol_table.hxx"
+#include "lexer.h"
+#include "ast.h"
+#include "error.h"
+#include "symbol_table.h"
 #include <memory>
 
 namespace niubcc{

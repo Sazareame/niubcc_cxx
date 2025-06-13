@@ -1,5 +1,5 @@
-#include "tacky.hxx"
-#include "utils.hxx"
+#include "tacky.h"
+#include "utils.h"
 #include <iostream>
 
 namespace niubcc{

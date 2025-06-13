@@ -1,8 +1,8 @@
 #include <cctype>
 #include <cstring>
 #include <cstdio>
-#include "lexer.hxx"
-#include "utils.hxx"
+#include "lexer.h"
+#include "utils.h"
 
 namespace niubcc{
 
