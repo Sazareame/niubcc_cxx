@@ -88,7 +88,7 @@ Constant::print(unsigned depth=0){
 
 std::string
 Var::print(unsigned depth=0){
-  return utils::fmt("Var(%.*s)", name_len, name);
+  return utils::fmt("Var(%s)", name);
 }
 
 std::string
@@ -126,9 +126,9 @@ Decl::print(unsigned depth=0){
   auto end_indent = std::string(depth, '\t');
   std::string init_expr{"none"};
   if(init) init_expr = init->print(depth + 1);
-  return utils::fmt("Declaration(\n%sname=%.*s\n%sinit=%s\n%s)",
+  return utils::fmt("Declaration(\n%sname=%s\n%sinit=%s\n%s)",
     indent.c_str(),
-    name_len, name,
+    name,
     indent.c_str(),
     init_expr.c_str(),
     end_indent.c_str()

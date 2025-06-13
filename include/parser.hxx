@@ -2,6 +2,7 @@
 #include "lexer.hxx"
 #include "ast.hxx"
 #include "error.hxx"
+#include "symbol_table.hxx"
 #include <memory>
 
 namespace niubcc{
@@ -17,6 +18,7 @@ public:
 
 class Parser{
 private:
+  SymbolTable symbol_table{};
   std::vector<Token> tokens;
   unsigned tok_pos;
 

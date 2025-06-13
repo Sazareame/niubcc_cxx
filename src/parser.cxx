@@ -156,7 +156,13 @@ Parser::parse_decl(){
     return ParseError("Expected type specifier, for now it is int", get_cur_tok_col(), get_cur_tok_line());
   if(!match(TokenType::ident))
     return ParseError("Expected variable name", get_cur_tok_col(), get_cur_tok_line());
-  auto decl = std::make_shared<ast::Decl>(tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len());
+
+  char const* name = tokens[tok_pos - 1].get_name();
+  unsigned len = tokens[tok_pos - 1].get_name_len();
+  char const* uniq_name = symbol_table.lookup_and_add(name, len);
+  if(!uniq_name) return ParseError("Duplicate declaration", get_cur_tok_col(), get_cur_tok_line());
+
+  auto decl = std::make_shared<ast::Decl>(uniq_name);
   if(match(TokenType::op_assign)){
     auto init = parse_expr();
     if(init.is_err()) return init.unwrap_err();
@@ -218,6 +224,8 @@ Parser::parse_expr(unsigned precedence){
 
   while(is_next_binary_op() && get_op_precedence(get_cur_tok_type()) >= precedence){
     if(match(TokenType::op_assign)){
+      if(!std::dynamic_pointer_cast<ast::Var>(lhs))
+        return ParseError("Cannot assign to a rvalue", get_cur_tok_col(), get_cur_tok_line());
       auto rhs = parse_expr(get_op_precedence(ast::OpType::op_assign));
       lhs = std::make_shared<ast::Assign>(lhs, rhs.unwrap());
     }else{
@@ -254,9 +262,13 @@ Parser::parse_factor(){
     return expr;
   }
 
-  if(match(TokenType::ident))
-    return std::shared_ptr<ast::Expr>(
-      std::make_shared<ast::Var>(tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len()));
+  if(match(TokenType::ident)){
+    char const* uniq_name = symbol_table.lookup_and_get(
+      tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len());
+    if(!uniq_name)
+      return ParseError("Undefined Variable", get_cur_tok_col(), get_cur_tok_line());
+    return std::shared_ptr<ast::Expr>(std::make_shared<ast::Var>(uniq_name));
+  }
 
   if(!match(TokenType::li_int))
     return ParseError("Expected expression",

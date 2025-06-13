@@ -48,11 +48,10 @@ struct Stmt: Block{
 };
 
 struct Decl: Block{
-  char const* name;
-  unsigned name_len;
+  char const* name; // C Style String
   Ptr<Expr> init;
-  Decl(char const* name, unsigned name_len, Ptr<Expr> init=0, Ptr<Block> next=0)
-  :Block(next), name(name), name_len(name_len), init(init){};
+  Decl(char const* name, Ptr<Expr> init=0, Ptr<Block> next=0)
+  :Block(next), name(name), init(init){};
   std::string print(unsigned)override;
 };
 
@@ -79,9 +78,8 @@ struct Binary: Expr{
 };
 
 struct Var: Expr{
-  char const* name;
-  unsigned name_len;
-  Var(char const* name, unsigned name_len): name(name), name_len(name_len){}
+  char const* name; // C Sylte String
+  Var(char const* name): name(name){}
   std::string print(unsigned)override;
 };
 
