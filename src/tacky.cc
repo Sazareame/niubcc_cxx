@@ -61,6 +61,8 @@ AstBuilder::build(Ptr<ast::Stmt> node){
     build(p);
   if(auto p = std::dynamic_pointer_cast<ast::ExprStmt>(node))
     build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::IfStmt>(node))
+    build(p);
   return; 
 }
 
@@ -69,6 +71,28 @@ AstBuilder::build(Ptr<ast::RetStmt> node){
   auto val = build(node->ret_val);
   auto ret = std::make_shared<Ret>(val);
   append_cur_insts(ret);
+}
+
+void
+AstBuilder::build(Ptr<ast::IfStmt> node){
+  auto cond_res = build(node->condition);
+  auto end_l = std::make_shared<Label>(get_label());
+  auto else_l = node->else_stmt ? std::make_shared<Label>(get_label()) : 0;
+
+  if(else_l)
+    append_cur_insts(std::make_shared<Jz>(else_l->number, cond_res));
+  else
+    append_cur_insts(std::make_shared<Jz>(end_l->number, cond_res));
+
+  build(node->then_stmt);
+  append_cur_insts(std::make_shared<Jmp>(end_l->number));
+
+  if(else_l){
+    append_cur_insts(else_l);
+    build(node->else_stmt);
+  }
+
+  append_cur_insts(end_l);
 }
 
 void
@@ -86,7 +110,42 @@ AstBuilder::build(Ptr<ast::Expr> node){
     return build(p);
   if(auto p = std::dynamic_pointer_cast<ast::Binary>(node))
     return build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::Assign>(node))
+    return build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::Condition>(node))
+    return build(p);
   return 0;
+}
+
+Ptr<Val>
+AstBuilder::build(Ptr<ast::Assign> node){
+  auto dst = build(node->dst);
+  auto src = build(node->src);
+  append_cur_insts(std::make_shared<Copy>(src, dst));
+  return dst;
+}
+
+Ptr<Var>
+AstBuilder::build(Ptr<ast::Condition> node){
+  auto res = std::make_shared<Var>(get_tmp_val());
+  auto cond_res = build(node->condition);
+  auto false_l = std::make_shared<Label>(get_label());
+  auto end_l = std::make_shared<Label>(get_label());
+
+  append_cur_insts(std::make_shared<Jz>(false_l->number, cond_res));
+
+  auto true_val = build(node->true_val);
+  append_cur_insts(std::make_shared<Copy>(true_val, res));
+  append_cur_insts(std::make_shared<Jmp>(end_l->number));
+
+  append_cur_insts(false_l);
+
+  auto false_val = build(node->false_val);
+  append_cur_insts(std::make_shared<Copy>(false_val, res));
+
+  append_cur_insts(end_l);
+
+  return res;
 }
 
 Ptr<Constant>

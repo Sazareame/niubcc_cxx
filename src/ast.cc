@@ -79,10 +79,45 @@ RetStmt::print(unsigned depth=0){
 }
 
 std::string
+IfStmt::print(unsigned depth=0){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+
+  std::string else_repr{"none"};
+  if(else_stmt) else_repr = else_stmt->print(depth + 1);
+  return utils::fmt(
+    "IfStmt(\n%scondition=%s\n%sthen=%s\n%selse=%s\n%s)",
+    indent.c_str(),
+    condition->print(depth + 1).c_str(),
+    indent.c_str(),
+    then_stmt->print(depth + 1).c_str(),
+    indent.c_str(),
+    else_repr.c_str(),
+    end_indent.c_str()
+  );
+}
+
+std::string
 Constant::print(unsigned depth=0){
   return utils::fmt(
     "Conatant(%.*s)",
     value_len, value
+  );
+}
+
+std::string
+Condition::print(unsigned depth=0){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+  return utils::fmt(
+    "Condition(\n%scondition=%s\n%strue=%s\n%sfalse=%s\n%s)",
+    indent.c_str(),
+    condition->print(depth + 1).c_str(),
+    indent.c_str(),
+    true_val->print(depth + 1).c_str(),
+    indent.c_str(),
+    false_val->print(depth + 1).c_str(),
+    end_indent.c_str()
   );
 }
 

@@ -122,11 +122,29 @@ struct ExprStmt: Stmt{
   std::string print(unsigned)override;
 };
 
+struct IfStmt: Stmt{
+  Ptr<Expr> condition;
+  Ptr<Stmt> then_stmt;
+  Ptr<Stmt> else_stmt;
+  IfStmt(Ptr<Expr> condition, Ptr<Stmt> then_stmt, Ptr<Stmt> else_stmt=0)
+  :condition(condition), then_stmt(then_stmt), else_stmt(else_stmt){}
+  std::string print(unsigned)override;
+};
+
 struct Constant: Expr{
   char const* value;
   unsigned value_len;
   Constant(char const* value, unsigned value_len)
   :value(value), value_len(value_len){};
+  std::string print(unsigned)override;
+};
+
+struct Condition: Expr{
+  Ptr<Expr> condition;
+  Ptr<Expr> true_val;
+  Ptr<Expr> false_val;
+  Condition(Ptr<Expr> condition, Ptr<Expr> true_val, Ptr<Expr> false_val)
+  :condition(condition), true_val(true_val), false_val(false_val){};
   std::string print(unsigned)override;
 };
 

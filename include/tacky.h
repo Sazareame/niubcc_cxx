@@ -156,11 +156,13 @@ public:
   void build(Ptr<ast::Decl>);
   void build(Ptr<ast::Stmt>);
   void build(Ptr<ast::RetStmt>);
+  void build(Ptr<ast::IfStmt>);
   void build(Ptr<ast::ExprStmt>);
   Ptr<Val> build(Ptr<ast::Expr>);
   Ptr<Var> build(Ptr<ast::Unary>);
   Ptr<Var> build(Ptr<ast::Binary>);
-  Ptr<Var> build(Ptr<ast::Assign>);
+  Ptr<Val> build(Ptr<ast::Assign>);
+  Ptr<Var> build(Ptr<ast::Condition>);
   Ptr<Var> build(Ptr<ast::Var>);
   Ptr<Constant> build(Ptr<ast::Constant>);
 };

@@ -52,6 +52,8 @@ Lexer::lex_one_token(){
     case '{': token.type = TokenType::punct_lbrace; break;
     case '}': token.type = TokenType::punct_rbrace; break;
     case ';': token.type = TokenType::punct_semicol; break;
+    case '?': token.type = TokenType::op_que; break;
+    case ':': token.type = TokenType::punct_colon; break;
     case '~': token.type = TokenType::op_bitnot; break;
     case '+': 
       if(*(cur_ptr + 1) == '+'){
@@ -163,6 +165,10 @@ Lexer::lex_ident_or_kw(Token& token){
     token.type = TokenType::kw_ret;
   else if(std::strncmp(text_ptr, "void", token.len) == 0)
     token.type = TokenType::kw_void;
+  else if(std::strncmp(text_ptr, "if", token.len) == 0)
+    token.type = TokenType::kw_if;
+  else if(std::strncmp(text_ptr, "else", token.len) == 0)
+    token.type = TokenType::kw_else;
   else{
     token.type = TokenType::ident;
     token.raw_indent = text_ptr;

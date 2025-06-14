@@ -64,7 +64,9 @@ private:
   Expected<Ptr<ast::Stmt>, ParseError> parse_stmt();
   Expected<Ptr<ast::ExprStmt>, ParseError> parse_exprstmt();
   Expected<Ptr<ast::RetStmt>, ParseError> parse_retstmt();
+  Expected<Ptr<ast::IfStmt>, ParseError> parse_ifstmt();
   Expected<Ptr<ast::Expr>, ParseError> parse_expr(unsigned precedence=0);
+  Expected<Ptr<ast::Expr>, ParseError> parse_condition(unsigned precedence=0);
   Expected<Ptr<ast::Expr>, ParseError> parse_factor();
   Expected<Ptr<ast::Unary>, ParseError> parse_unary();
 public:

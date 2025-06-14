@@ -175,8 +175,13 @@ Parser::parse_decl(){
 
 Expected<Ptr<ast::Stmt>, ParseError>
 Parser::parse_stmt(){
-  if(next_is(TokenType::kw_ret)){
+  if(match(TokenType::kw_ret)){
     auto res = parse_retstmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
+  if(match(TokenType::kw_if)){
+    auto res = parse_ifstmt();
     if(res.is_err()) return res.unwrap_err();
     return std::shared_ptr<ast::Stmt>(res.unwrap());
   }
@@ -185,6 +190,28 @@ Parser::parse_stmt(){
   auto res = parse_exprstmt();
   if(res.is_err()) return res.unwrap_err();
   return std::shared_ptr<ast::Stmt>(res.unwrap());
+}
+
+Expected<Ptr<ast::IfStmt>, ParseError>
+Parser::parse_ifstmt(){
+  if(!match(TokenType::lparen))
+    return ParseError("Expecte left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+  auto condition = parse_expr();
+
+  if(condition.is_err()) return condition.unwrap_err();
+
+  if(!match(TokenType::rparen))
+    return ParseError("Expecte right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  auto then_stmt = parse_stmt();
+  if(then_stmt.is_err()) return then_stmt.unwrap_err();
+  Ptr<ast::Stmt> else_stmt = 0;
+  if(match(TokenType::kw_else)){
+    auto res = parse_stmt();
+    if(res.is_err()) return res.unwrap_err();
+    else_stmt = res.unwrap();
+  }
+  return std::make_shared<ast::IfStmt>(condition.unwrap(), then_stmt.unwrap(), else_stmt);
 }
 
 Expected<Ptr<ast::ExprStmt>, ParseError>
@@ -199,10 +226,6 @@ Parser::parse_exprstmt(){
 // Stmt -> return Expr ;
 Expected<Ptr<ast::RetStmt>, ParseError>
 Parser::parse_retstmt(){
-  if(!match(TokenType::kw_ret))
-    return ParseError("Expected keyword return",
-      get_cur_tok_col(), get_cur_tok_line());
-  
   auto expr = parse_expr();
   if(expr.is_err()) return expr.unwrap_err();
 
@@ -227,7 +250,13 @@ Parser::parse_expr(unsigned precedence){
       if(!std::dynamic_pointer_cast<ast::Var>(lhs))
         return ParseError("Cannot assign to a rvalue", get_cur_tok_col(), get_cur_tok_line());
       auto rhs = parse_expr(get_op_precedence(ast::OpType::op_assign));
-      lhs = std::make_shared<ast::Assign>(lhs, rhs.unwrap());
+      lhs = std::make_shared<ast::Assign>(rhs.unwrap(), lhs);
+    }else if(match(TokenType::op_que)){
+      auto mid = parse_condition();
+      if(mid.is_err()) return mid.unwrap_err();
+      auto rhs = parse_expr(get_op_precedence(ast::OpType::op_que));
+      if(rhs.is_err()) return rhs.unwrap_err();
+      lhs = std::make_shared<ast::Condition>(lhs, mid.unwrap(), rhs.unwrap());
     }else{
       op = convert_token_to_op(get_cur_tok_type());
       ++tok_pos;
@@ -237,6 +266,15 @@ Parser::parse_expr(unsigned precedence){
     }
   }
   return lhs;
+}
+
+Expected<Ptr<ast::Expr>, ParseError>
+Parser::parse_condition(unsigned precedence){
+  auto res = parse_expr();
+  if(res.is_err()) return res.unwrap_err();
+  if(!match(TokenType::punct_colon))
+    return ParseError("Expected colon in condition expression", get_cur_tok_col(), get_cur_tok_line());
+  return res.unwrap();
 }
 
 // Factor -> int | Unary | (Expr) | Var
