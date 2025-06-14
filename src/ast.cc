@@ -51,10 +51,22 @@ std::string
 FunctionDef::print(unsigned depth=0){
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
-  std::string res = utils::fmt(
-    "FunctionDef(\n%sname=%.*s\n%sbody=[",
+  return utils::fmt(
+    "FunctionDef(\n%sname=%.*s\n%sbody=%s\n%s)",
     indent.c_str(),
     name_len, name,
+    indent.c_str(),
+    blocks->print(depth + 1).c_str(),
+    end_indent.c_str()
+  );
+}
+
+std::string
+CompoundStmt::print(unsigned depth=0){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+  std::string res = utils::fmt(
+    "Stmts(\n%s[",
     indent.c_str()
   );
   auto cur_block = blocks;

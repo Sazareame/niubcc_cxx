@@ -29,12 +29,17 @@ AstBuilder::build(Ptr<ast::Program> node){
 
 Ptr<FunctionDef>
 AstBuilder::build(Ptr<ast::FunctionDef> node){
+  build(node->blocks);
+  return std::make_shared<FunctionDef>(node->name, node->name_len, cur_insts);
+}
+
+void
+AstBuilder::build(Ptr<ast::CompoundStmt> node){
   auto cur = node->blocks;
   while(cur){
     build(cur);
     cur = cur->next;
   }
-  return std::make_shared<FunctionDef>(node->name, node->name_len, cur_insts);
 }
 
 void
@@ -62,6 +67,8 @@ AstBuilder::build(Ptr<ast::Stmt> node){
   if(auto p = std::dynamic_pointer_cast<ast::ExprStmt>(node))
     build(p);
   if(auto p = std::dynamic_pointer_cast<ast::IfStmt>(node))
+    build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::CompoundStmt>(node))
     build(p);
   return; 
 }

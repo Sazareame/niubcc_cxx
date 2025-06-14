@@ -156,6 +156,7 @@ public:
   void build(Ptr<ast::Decl>);
   void build(Ptr<ast::Stmt>);
   void build(Ptr<ast::RetStmt>);
+  void build(Ptr<ast::CompoundStmt>);
   void build(Ptr<ast::IfStmt>);
   void build(Ptr<ast::ExprStmt>);
   Ptr<Val> build(Ptr<ast::Expr>);

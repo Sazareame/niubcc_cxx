@@ -101,29 +101,15 @@ Parser::parse_funcdef(){
   if(!match(TokenType::lparen, TokenType::rparen, TokenType::punct_lbrace))
     return ParseError("Syntax error", get_cur_tok_col(), get_cur_tok_line());
 
-  auto blocks_res = parse_block();
-  // parse_block() return null ptr if the body is empty, e.g., int main(){}
-  if(blocks_res.is_err()) return blocks_res.unwrap_err();
-  auto blocks = blocks_res.unwrap();
-  auto cur = blocks;
-
-  while(cur){
-    auto res = parse_block();
-    if(res.is_err()) return res.unwrap_err();
-    cur->next = res.unwrap(); 
-    cur = cur->next;
-  }
-
-  // Checking the closed right brace
-  if(!match(TokenType::punct_rbrace))
-    return ParseError("Expected right brace after function body", get_cur_tok_col(), get_cur_tok_line());
+  auto body = parse_compoundstmt();
+  if(body.is_err()) return body.unwrap_err();
 
   if(!next_is(TokenType::unknown)){
     return ParseError("Only support one main function defination",
       get_cur_tok_col(), get_cur_tok_line());
   }
 
-  return std::make_shared<ast::FunctionDef>(name, name_len, blocks);
+  return std::make_shared<ast::FunctionDef>(name, name_len, body.unwrap());
 }
 
 Expected<Ptr<ast::Block>, ParseError>
@@ -187,9 +173,36 @@ Parser::parse_stmt(){
   }
   if(match(TokenType::punct_semicol))
     return std::shared_ptr<ast::Stmt>(std::make_shared<ast::NullStmt>());
+  if(match(TokenType::punct_lbrace)){
+    auto res = parse_compoundstmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
   auto res = parse_exprstmt();
   if(res.is_err()) return res.unwrap_err();
   return std::shared_ptr<ast::Stmt>(res.unwrap());
+}
+
+Expected<Ptr<ast::CompoundStmt>, ParseError>
+Parser::parse_compoundstmt(){
+  auto blocks_res = parse_block();
+  // parse_block() return null ptr if the body is empty, e.g., int main(){}
+  if(blocks_res.is_err()) return blocks_res.unwrap_err();
+  auto blocks = blocks_res.unwrap();
+  auto cur = blocks;
+
+  while(cur){
+    auto res = parse_block();
+    if(res.is_err()) return res.unwrap_err();
+    cur->next = res.unwrap(); 
+    cur = cur->next;
+  }
+
+  // Checking the closed right brace
+  if(!match(TokenType::punct_rbrace))
+    return ParseError("Expected right brace after function body", get_cur_tok_col(), get_cur_tok_line());
+
+  return std::make_shared<ast::CompoundStmt>(blocks);
 }
 
 Expected<Ptr<ast::IfStmt>, ParseError>

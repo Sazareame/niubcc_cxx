@@ -28,6 +28,7 @@ struct Stmt;
 struct RetStmt;
 struct Constant;
 struct Expr;
+struct CompoundStmt;
 
 struct BaseNode{
   BaseNode() = default;
@@ -99,8 +100,8 @@ struct Program: BaseNode{
 struct FunctionDef: BaseNode{
   char const* name;
   unsigned name_len;
-  Ptr<Block> blocks;
-  FunctionDef(char const* name, unsigned name_len, Ptr<Block> blocks)
+  Ptr<CompoundStmt> blocks;
+  FunctionDef(char const* name, unsigned name_len, Ptr<CompoundStmt> blocks)
   :name(name), name_len(name_len), blocks(blocks){};
   std::string print(unsigned)override;
 };
@@ -128,6 +129,12 @@ struct IfStmt: Stmt{
   Ptr<Stmt> else_stmt;
   IfStmt(Ptr<Expr> condition, Ptr<Stmt> then_stmt, Ptr<Stmt> else_stmt=0)
   :condition(condition), then_stmt(then_stmt), else_stmt(else_stmt){}
+  std::string print(unsigned)override;
+};
+
+struct CompoundStmt: Stmt{
+  Ptr<Block> blocks;
+  CompoundStmt(Ptr<Block> blocks): blocks(blocks){};
   std::string print(unsigned)override;
 };
 

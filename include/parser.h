@@ -62,6 +62,7 @@ private:
   Expected<Ptr<ast::Block>, ParseError> parse_block();
   Expected<Ptr<ast::Decl>, ParseError> parse_decl();
   Expected<Ptr<ast::Stmt>, ParseError> parse_stmt();
+  Expected<Ptr<ast::CompoundStmt>, ParseError> parse_compoundstmt();
   Expected<Ptr<ast::ExprStmt>, ParseError> parse_exprstmt();
   Expected<Ptr<ast::RetStmt>, ParseError> parse_retstmt();
   Expected<Ptr<ast::IfStmt>, ParseError> parse_ifstmt();
