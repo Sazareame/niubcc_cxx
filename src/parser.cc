@@ -145,7 +145,7 @@ Parser::parse_decl(){
 
   char const* name = tokens[tok_pos - 1].get_name();
   unsigned len = tokens[tok_pos - 1].get_name_len();
-  char const* uniq_name = symbol_table.lookup_and_add(name, len);
+  auto uniq_name = symbol_table.lookup_and_add(name, len);
   if(!uniq_name) return ParseError("Duplicate declaration", get_cur_tok_col(), get_cur_tok_line());
 
   auto decl = std::make_shared<ast::Decl>(uniq_name);
@@ -185,6 +185,8 @@ Parser::parse_stmt(){
 
 Expected<Ptr<ast::CompoundStmt>, ParseError>
 Parser::parse_compoundstmt(){
+  symbol_table.enter_scope();
+
   auto blocks_res = parse_block();
   // parse_block() return null ptr if the body is empty, e.g., int main(){}
   if(blocks_res.is_err()) return blocks_res.unwrap_err();
@@ -202,19 +204,20 @@ Parser::parse_compoundstmt(){
   if(!match(TokenType::punct_rbrace))
     return ParseError("Expected right brace after function body", get_cur_tok_col(), get_cur_tok_line());
 
+  symbol_table.leave_scope();
   return std::make_shared<ast::CompoundStmt>(blocks);
 }
 
 Expected<Ptr<ast::IfStmt>, ParseError>
 Parser::parse_ifstmt(){
   if(!match(TokenType::lparen))
-    return ParseError("Expecte left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
   auto condition = parse_expr();
 
   if(condition.is_err()) return condition.unwrap_err();
 
   if(!match(TokenType::rparen))
-    return ParseError("Expecte right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
 
   auto then_stmt = parse_stmt();
   if(then_stmt.is_err()) return then_stmt.unwrap_err();
@@ -243,7 +246,7 @@ Parser::parse_retstmt(){
   if(expr.is_err()) return expr.unwrap_err();
 
   if(!match(TokenType::punct_semicol))
-    return ParseError("Expcted semicolumn",
+    return ParseError("Expected semicolumn",
       get_cur_tok_col(), get_cur_tok_line());
 
   return std::make_shared<ast::RetStmt>(expr.unwrap());
@@ -314,7 +317,7 @@ Parser::parse_factor(){
   }
 
   if(match(TokenType::ident)){
-    char const* uniq_name = symbol_table.lookup_and_get(
+    auto uniq_name = symbol_table.lookup_and_get(
       tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len());
     if(!uniq_name)
       return ParseError("Undefined Variable", get_cur_tok_col(), get_cur_tok_line());

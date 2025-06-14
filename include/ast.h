@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <string>
 #include "lexer.h"
 
 namespace niubcc{
@@ -49,9 +50,9 @@ struct Stmt: Block{
 };
 
 struct Decl: Block{
-  char const* name; // C Style String
+  Ptr<std::string> name;
   Ptr<Expr> init;
-  Decl(char const* name, Ptr<Expr> init=0, Ptr<Block> next=0)
+  Decl(Ptr<std::string> name, Ptr<Expr> init=0, Ptr<Block> next=0)
   :Block(next), name(name), init(init){};
   std::string print(unsigned)override;
 };
@@ -79,8 +80,8 @@ struct Binary: Expr{
 };
 
 struct Var: Expr{
-  char const* name; // C Sylte String
-  Var(char const* name): name(name){}
+  Ptr<std::string> name;
+  Var(Ptr<std::string> name): name(name){}
   std::string print(unsigned)override;
 };
 

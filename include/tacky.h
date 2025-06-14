@@ -124,14 +124,14 @@ struct Constant: Val{
 
 class AstBuilder{
   unsigned tmp_val{0};
-  std::unordered_map<char const*, unsigned> var_tmp_map{};
+  std::unordered_map<Ptr<std::string>, unsigned> var_tmp_map{};
   // for tmp var
   unsigned get_tmp_val(){
     return tmp_val++;
   }
 
   // for named var
-  unsigned get_tmp_val(char const* name){
+  unsigned get_tmp_val(Ptr<std::string> name){
     if(var_tmp_map.count(name)) return var_tmp_map[name];
     var_tmp_map[name] = tmp_val;
     return tmp_val++;

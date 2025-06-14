@@ -135,7 +135,7 @@ Condition::print(unsigned depth=0){
 
 std::string
 Var::print(unsigned depth=0){
-  return utils::fmt("Var(%s)", name);
+  return utils::fmt("Var(%s)", name->c_str());
 }
 
 std::string
@@ -175,7 +175,7 @@ Decl::print(unsigned depth=0){
   if(init) init_expr = init->print(depth + 1);
   return utils::fmt("Declaration(\n%sname=%s\n%sinit=%s\n%s)",
     indent.c_str(),
-    name,
+    name->c_str(),
     indent.c_str(),
     init_expr.c_str(),
     end_indent.c_str()
