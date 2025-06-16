@@ -74,7 +74,7 @@ CompoundStmt::print(unsigned depth=0){
     res += std::move(cur_block->print(depth + 1)); // explictly choose move assignment
     cur_block = cur_block->next;
   }
-  res += utils::fmt("]\n%s)", end_indent.c_str());
+  res += utils::fmt("%s]\n%s)", indent.c_str(), end_indent.c_str());
   return res;
 }
 
@@ -219,7 +219,7 @@ ForStmtInit::print(unsigned depth){
       res += std::move(cur->print(depth + 1));
       cur = std::dynamic_pointer_cast<Decl>(cur->next);
     }
-    res += utils::fmt("]\n%s)", end_indent.c_str());
+    res += utils::fmt("%s]\n%s)", indent.c_str(), end_indent.c_str());
     return res;
   }
 

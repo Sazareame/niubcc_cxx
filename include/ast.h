@@ -166,14 +166,10 @@ struct ForStmt: Stmt{
 };
 
 struct Break: Stmt{
-  Ptr<Stmt> stmt;
-  Break(Ptr<Stmt> stmt): stmt(stmt){};
   std::string print(unsigned)override;
 };
 
 struct Continue: Stmt{
-  Ptr<Stmt> stmt;
-  Continue(Ptr<Stmt> stmt): stmt(stmt){};
   std::string print(unsigned)override;
 };
 

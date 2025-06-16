@@ -206,6 +206,16 @@ Parser::parse_stmt(){
     if(res.is_err()) return res.unwrap_err();
     return std::shared_ptr<ast::Stmt>(res.unwrap());
   }
+  if(match(TokenType::kw_break)){
+    if(!loop_depth) return ParseError("Break statement outside loop", get_cur_tok_col(), get_cur_tok_line());
+    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    return std::shared_ptr<ast::Stmt>(std::make_shared<ast::Break>());
+  }
+  if(match(TokenType::kw_continue)){
+    if(!loop_depth) return ParseError("Contiue statement outside loop", get_cur_tok_col(), get_cur_tok_line());
+    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    return std::shared_ptr<ast::Stmt>(std::make_shared<ast::Continue>());
+  }
   if(match(TokenType::punct_semicol))
     return std::shared_ptr<ast::Stmt>(std::make_shared<ast::NullStmt>());
   if(match(TokenType::punct_lbrace)){
@@ -220,6 +230,7 @@ Parser::parse_stmt(){
 
 Expected<Ptr<ast::DoStmt>, ParseError>
 Parser::parse_dostmt(){
+  ++loop_depth;
   auto stmt = parse_stmt();
   if(stmt.is_err()) return stmt.unwrap_err();
 
@@ -238,6 +249,7 @@ Parser::parse_dostmt(){
   if(!match(TokenType::punct_semicol))
     return ParseError("Expected semicoloum", get_cur_tok_col(), get_cur_tok_line());
   
+  --loop_depth;
   return std::make_shared<ast::DoStmt>(stmt.unwrap(), condition.unwrap());
 };
 
@@ -252,9 +264,10 @@ Parser::parse_whilestmt(){
   if(!match(TokenType::rparen))
     return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
 
+  ++loop_depth;
   auto stmt = parse_stmt();
   if(stmt.is_err()) return stmt.unwrap_err();
-
+  --loop_depth;
   return std::make_shared<ast::WhileStmt>(stmt.unwrap(), condition.unwrap());
 };
 
@@ -288,8 +301,10 @@ Parser::parse_forstmt(){
   if(!match(TokenType::rparen))
     return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
 
+  ++loop_depth;
   auto stmt = parse_stmt();
   if(stmt.is_err()) return stmt.unwrap_err();
+  --loop_depth;
 
   symbol_table.leave_scope();
   return std::make_shared<ast::ForStmt>(init.unwrap(), condition, post, stmt.unwrap());
@@ -302,6 +317,8 @@ Parser::parse_forinit(){
     if(res.is_err()) return res.unwrap_err();
     return std::make_shared<ast::ForStmtInit>(res.unwrap());
   }
+  if(next_is(TokenType::punct_semicol))
+    return std::shared_ptr<ast::ForStmtInit>(0);
   auto res = parse_expr();
   if(res.is_err()) return res.unwrap_err();
   if(!match(TokenType::punct_semicol))

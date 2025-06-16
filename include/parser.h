@@ -57,6 +57,9 @@ private:
   bool is_next_binary_op()const;
   bool is_next_unary_op()const;
 
+  // Represent current loop depth, used for detecting bad break and continue.
+  unsigned loop_depth{0};
+
   Expected<Ptr<ast::Program>, ParseError> parse_program();
   Expected<Ptr<ast::FunctionDef>, ParseError> parse_funcdef();
   Expected<Ptr<ast::Block>, ParseError> parse_block();
