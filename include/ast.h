@@ -133,6 +133,50 @@ struct IfStmt: Stmt{
   std::string print(unsigned)override;
 };
 
+struct DoStmt: Stmt{
+  Ptr<Stmt> stmt;
+  Ptr<Expr> condition;
+  DoStmt(Ptr<Stmt> stmt, Ptr<Expr> condition): stmt(stmt), condition(condition){};
+  std::string print(unsigned)override;
+};
+
+struct WhileStmt: Stmt{
+  Ptr<Stmt> stmt;
+  Ptr<Expr> condition;
+  WhileStmt(Ptr<Stmt> stmt, Ptr<Expr> condition): stmt(stmt), condition(condition){};
+  std::string print(unsigned)override;
+};
+
+struct ForStmtInit: BaseNode{
+  Ptr<Decl> decls;
+  Ptr<Expr> expr;
+  ForStmtInit(Ptr<Decl> decls): decls(decls), expr(0){};
+  ForStmtInit(Ptr<Expr> expr): decls(0), expr(expr){};
+  std::string print(unsigned)override;
+};
+
+struct ForStmt: Stmt{
+  Ptr<ForStmtInit> init;
+  Ptr<Expr> condition;
+  Ptr<Expr> post;
+  Ptr<Stmt> stmt;
+  ForStmt(Ptr<ForStmtInit> init, Ptr<Expr> condition, Ptr<Expr> post, Ptr<Stmt> stmt)
+  : init(init), condition(condition), post(post), stmt(stmt){};
+  std::string print(unsigned)override;
+};
+
+struct Break: Stmt{
+  Ptr<Stmt> stmt;
+  Break(Ptr<Stmt> stmt): stmt(stmt){};
+  std::string print(unsigned)override;
+};
+
+struct Continue: Stmt{
+  Ptr<Stmt> stmt;
+  Continue(Ptr<Stmt> stmt): stmt(stmt){};
+  std::string print(unsigned)override;
+};
+
 struct CompoundStmt: Stmt{
   Ptr<Block> blocks;
   CompoundStmt(Ptr<Block> blocks): blocks(blocks){};

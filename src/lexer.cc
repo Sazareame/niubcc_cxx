@@ -52,6 +52,7 @@ Lexer::lex_one_token(){
     case '{': token.type = TokenType::punct_lbrace; break;
     case '}': token.type = TokenType::punct_rbrace; break;
     case ';': token.type = TokenType::punct_semicol; break;
+    case ',': token.type = TokenType::punct_comma; break;
     case '?': token.type = TokenType::op_que; break;
     case ':': token.type = TokenType::punct_colon; break;
     case '~': token.type = TokenType::op_bitnot; break;
@@ -159,16 +160,26 @@ Lexer::lex_ident_or_kw(Token& token){
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
   token.col = col;
   token.line = line;
-  if(std::strncmp(text_ptr, "int", token.len) == 0)
+  if(utils::string_equal(text_ptr, "int", token.len))
     token.type = TokenType::kw_int;
-  else if(std::strncmp(text_ptr, "return", token.len) == 0)
+  else if(utils::string_equal(text_ptr, "return", token.len))
     token.type = TokenType::kw_ret;
-  else if(std::strncmp(text_ptr, "void", token.len) == 0)
+  else if(utils::string_equal(text_ptr, "void", token.len))
     token.type = TokenType::kw_void;
-  else if(std::strncmp(text_ptr, "if", token.len) == 0)
+  else if(utils::string_equal(text_ptr, "if", token.len))
     token.type = TokenType::kw_if;
-  else if(std::strncmp(text_ptr, "else", token.len) == 0)
+  else if(utils::string_equal(text_ptr, "else", token.len))
     token.type = TokenType::kw_else;
+  else if(utils::string_equal(text_ptr, "while", token.len))
+    token.type = TokenType::kw_while;
+  else if(utils::string_equal(text_ptr, "do", token.len))
+    token.type = TokenType::kw_do;
+  else if(utils::string_equal(text_ptr, "for", token.len))
+    token.type = TokenType::kw_for;
+  else if(utils::string_equal(text_ptr, "break", token.len))
+    token.type = TokenType::kw_break;
+  else if(utils::string_equal(text_ptr, "continue", token.len))
+    token.type = TokenType::kw_continue;
   else{
     token.type = TokenType::ident;
     token.raw_indent = text_ptr;

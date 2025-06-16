@@ -140,6 +140,27 @@ Expected<Ptr<ast::Decl>, ParseError>
 Parser::parse_decl(){
   if(!match(TokenType::kw_int))
     return ParseError("Expected type specifier, for now it is int", get_cur_tok_col(), get_cur_tok_line());
+
+  auto res = parse_decl_init_list();
+  if(res.is_err()) return res.unwrap_err();
+  auto decl = res.unwrap();
+  Ptr<ast::Block> cur = decl;
+
+  while(match(TokenType::punct_comma)){
+    auto res = parse_decl_init_list();
+    if(res.is_err()) return res.unwrap_err();
+    cur->next = res.unwrap();
+    cur = cur->next;
+  }
+
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicolumm after variable declatation", get_cur_tok_col(), get_cur_tok_line());
+
+  return decl;
+}
+
+Expected<Ptr<ast::Decl>, ParseError>
+Parser::parse_decl_init_list(){
   if(!match(TokenType::ident))
     return ParseError("Expected variable name", get_cur_tok_col(), get_cur_tok_line());
 
@@ -154,8 +175,7 @@ Parser::parse_decl(){
     if(init.is_err()) return init.unwrap_err();
     decl->init = init.unwrap();
   }
-  if(!match(TokenType::punct_semicol))
-    return ParseError("Expected semicolumm after variable declatation", get_cur_tok_col(), get_cur_tok_line());
+
   return decl;
 }
 
@@ -171,6 +191,21 @@ Parser::parse_stmt(){
     if(res.is_err()) return res.unwrap_err();
     return std::shared_ptr<ast::Stmt>(res.unwrap());
   }
+  if(match(TokenType::kw_do)){
+    auto res = parse_dostmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
+  if(match(TokenType::kw_while)){
+    auto res = parse_whilestmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
+  if(match(TokenType::kw_for)){
+    auto res = parse_forstmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
   if(match(TokenType::punct_semicol))
     return std::shared_ptr<ast::Stmt>(std::make_shared<ast::NullStmt>());
   if(match(TokenType::punct_lbrace)){
@@ -183,6 +218,97 @@ Parser::parse_stmt(){
   return std::shared_ptr<ast::Stmt>(res.unwrap());
 }
 
+Expected<Ptr<ast::DoStmt>, ParseError>
+Parser::parse_dostmt(){
+  auto stmt = parse_stmt();
+  if(stmt.is_err()) return stmt.unwrap_err();
+
+  if(!match(TokenType::kw_while))
+    return ParseError("Expected keyword while after do-statement body", get_cur_tok_col(), get_cur_tok_line());
+
+  if(!match(TokenType::lparen))
+    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  auto condition = parse_expr();
+  if(condition.is_err()) return condition.unwrap_err();
+
+  if(!match(TokenType::rparen))
+    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicoloum", get_cur_tok_col(), get_cur_tok_line());
+  
+  return std::make_shared<ast::DoStmt>(stmt.unwrap(), condition.unwrap());
+};
+
+Expected<Ptr<ast::WhileStmt>, ParseError>
+Parser::parse_whilestmt(){
+  if(!match(TokenType::lparen))
+    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  auto condition = parse_expr();
+  if(condition.is_err()) return condition.unwrap_err();
+
+  if(!match(TokenType::rparen))
+    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  auto stmt = parse_stmt();
+  if(stmt.is_err()) return stmt.unwrap_err();
+
+  return std::make_shared<ast::WhileStmt>(stmt.unwrap(), condition.unwrap());
+};
+
+Expected<Ptr<ast::ForStmt>, ParseError>
+Parser::parse_forstmt(){
+  if(!match(TokenType::lparen))
+    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  symbol_table.enter_scope();
+
+  auto init = parse_forinit();
+  if(init.is_err()) return init.unwrap_err();
+
+  Ptr<ast::Expr> condition = 0;
+  Ptr<ast::Expr> post = 0;
+
+  if(!match(TokenType::punct_semicol)){
+    auto res = parse_expr();
+    if(res.is_err()) return res.unwrap_err();
+    condition = res.unwrap();
+    if(!match(TokenType::punct_semicol))
+      return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+  }
+
+  if(!match(TokenType::punct_semicol)){
+    auto res = parse_expr();
+    if(res.is_err()) return res.unwrap_err();
+    post = res.unwrap();
+  }
+
+  if(!match(TokenType::rparen))
+    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+
+  auto stmt = parse_stmt();
+  if(stmt.is_err()) return stmt.unwrap_err();
+
+  symbol_table.leave_scope();
+  return std::make_shared<ast::ForStmt>(init.unwrap(), condition, post, stmt.unwrap());
+};
+
+Expected<Ptr<ast::ForStmtInit>, ParseError>
+Parser::parse_forinit(){
+  if(next_is(TokenType::kw_int)){
+    auto res = parse_decl();
+    if(res.is_err()) return res.unwrap_err();
+    return std::make_shared<ast::ForStmtInit>(res.unwrap());
+  }
+  auto res = parse_expr();
+  if(res.is_err()) return res.unwrap_err();
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+  return std::make_shared<ast::ForStmtInit>(res.unwrap());
+}
+
 Expected<Ptr<ast::CompoundStmt>, ParseError>
 Parser::parse_compoundstmt(){
   symbol_table.enter_scope();
@@ -192,12 +318,14 @@ Parser::parse_compoundstmt(){
   if(blocks_res.is_err()) return blocks_res.unwrap_err();
   auto blocks = blocks_res.unwrap();
   auto cur = blocks;
+  while(cur->next) cur = cur->next;
 
-  while(cur){
+  while(1){
     auto res = parse_block();
     if(res.is_err()) return res.unwrap_err();
     cur->next = res.unwrap(); 
-    cur = cur->next;
+    if(!cur->next) break;
+    while(cur->next) cur = cur->next;
   }
 
   // Checking the closed right brace

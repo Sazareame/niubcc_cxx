@@ -182,5 +182,84 @@ Decl::print(unsigned depth=0){
   );
 }
 
+std::string
+DoStmt::print(unsigned depth){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+  return utils::fmt("Do(\n%sstmts=%s\n%scondition=%s\n%s)",
+    indent.c_str(),
+    stmt->print(depth + 1).c_str(),
+    indent.c_str(),
+    condition->print(depth + 1).c_str(),
+    end_indent.c_str()
+  );
+}
+
+std::string
+WhileStmt::print(unsigned depth){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+  return utils::fmt("While(\n%sstmts=%s\n%scondition=%s\n%s)",
+    indent.c_str(),
+    stmt->print(depth + 1).c_str(),
+    indent.c_str(),
+    condition->print(depth + 1).c_str(),
+    end_indent.c_str()
+  );
+}
+
+std::string
+ForStmtInit::print(unsigned depth){
+  if(decls){
+    auto indent = std::string(depth + 1, '\t');
+    auto end_indent = std::string(depth, '\t');
+    std::string res = utils::fmt("Decls(\n%s[", indent.c_str());
+    auto cur = decls;
+    while(cur){
+      res += std::move(cur->print(depth + 1));
+      cur = std::dynamic_pointer_cast<Decl>(cur->next);
+    }
+    res += utils::fmt("]\n%s)", end_indent.c_str());
+    return res;
+  }
+
+  return expr->print(depth + 1);
+}
+
+std::string
+ForStmt::print(unsigned depth){
+  auto indent = std::string(depth + 1, '\t');
+  auto end_indent = std::string(depth, '\t');
+
+  std::string init_repr{"none"};
+  std::string cond_repr{"none"};
+  std::string post_repr{"none"};
+  if(init) init_repr = init->print(depth + 1);
+  if(condition) cond_repr = condition->print(depth + 1);
+  if(post) post_repr = post->print(depth + 1);
+
+  return utils::fmt("For(\n%sinit=%s\n%scondition=%s\n%spost=%s\n%sstmt=%s\n%s)",
+    indent.c_str(),
+    init_repr.c_str(),
+    indent.c_str(),
+    cond_repr.c_str(),
+    indent.c_str(),
+    post_repr.c_str(),
+    indent.c_str(),
+    stmt->print(depth + 1).c_str(),
+    end_indent.c_str()
+  );
+}
+
+std::string
+Break::print(unsigned depth){
+  return utils::fmt("Break()\n");
+}
+
+std::string
+Continue::print(unsigned depth){
+  return utils::fmt("Continue()\n");
+}
+
 }
 }
