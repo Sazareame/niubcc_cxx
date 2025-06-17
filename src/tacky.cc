@@ -62,6 +62,9 @@ AstBuilder::build(Ptr<ast::Decl> node){
 
 void
 AstBuilder::build(Ptr<ast::Stmt> node){
+  if(node->label)
+    append_cur_insts(std::make_shared<Label>(get_label(node->label)));
+
   if(auto p = std::dynamic_pointer_cast<ast::RetStmt>(node))
     build(p);
   if(auto p = std::dynamic_pointer_cast<ast::ExprStmt>(node))
@@ -69,6 +72,8 @@ AstBuilder::build(Ptr<ast::Stmt> node){
   if(auto p = std::dynamic_pointer_cast<ast::IfStmt>(node))
     build(p);
   if(auto p = std::dynamic_pointer_cast<ast::CompoundStmt>(node))
+    build(p);
+  if(auto p = std::dynamic_pointer_cast<ast::GotoStmt>(node))
     build(p);
   return; 
 }
@@ -100,6 +105,11 @@ AstBuilder::build(Ptr<ast::IfStmt> node){
   }
 
   append_cur_insts(end_l);
+}
+
+void
+AstBuilder::build(Ptr<ast::GotoStmt> node){
+  append_cur_insts(std::make_shared<Jmp>(get_label(node->label)));
 }
 
 void

@@ -44,6 +44,7 @@ struct Block: BaseNode{
 };
 
 struct Stmt: Block{
+  Ptr<std::string> label{0};
   Stmt(Ptr<Block> next=0): Block(next){};
   virtual ~Stmt() = default;
   virtual std::string print(unsigned) = 0;
@@ -170,6 +171,12 @@ struct Break: Stmt{
 };
 
 struct Continue: Stmt{
+  std::string print(unsigned)override;
+};
+
+struct GotoStmt: Stmt{
+  Ptr<std::string> target;
+  GotoStmt(Ptr<std::string> target): target(target){};
   std::string print(unsigned)override;
 };
 

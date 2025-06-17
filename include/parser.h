@@ -8,11 +8,10 @@
 namespace niubcc{
 
 class ParseError: Error{
-  unsigned col;
-  unsigned line;
+  utils::Pos pos;
 public:
-  ParseError(char const* msg, unsigned col, unsigned line)
-  : Error(msg), col(col), line(line){};
+  ParseError(char const* msg, utils::Pos pos)
+  : Error(msg), pos(pos){};
   std::string to_string()const override;
 };
 
@@ -28,8 +27,7 @@ private:
 
   ast::OpType convert_token_to_op(TokenType tokentype)const;
 
-  unsigned get_cur_tok_col()const{return tokens[tok_pos].get_col();};
-  unsigned get_cur_tok_line()const{return tokens[tok_pos].get_line();};
+  utils::Pos get_cur_tok_pos()const{return tokens[tok_pos].get_pos();};
   TokenType get_cur_tok_type()const{return tokens[tok_pos].get_type();};
 
   bool match(TokenType type);
@@ -74,6 +72,7 @@ private:
   Expected<Ptr<ast::WhileStmt>, ParseError> parse_whilestmt();
   Expected<Ptr<ast::ForStmt>, ParseError> parse_forstmt();
   Expected<Ptr<ast::ForStmtInit>, ParseError> parse_forinit();
+  Expected<Ptr<ast::GotoStmt>, ParseError> parse_gotostmt();
   Expected<Ptr<ast::Expr>, ParseError> parse_expr(unsigned precedence=0);
   Expected<Ptr<ast::Expr>, ParseError> parse_condition(unsigned precedence=0);
   Expected<Ptr<ast::Expr>, ParseError> parse_factor();

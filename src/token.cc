@@ -33,20 +33,20 @@ Token::fmt()const{
   if(is_keyword()) return utils::fmt(
     "Keyword@%s (%u, %u)",
     token_name_map[static_cast<unsigned short>(type)],
-    line, col
+    pos.line, pos.col
   );
   else if(is_literal()) return utils::fmt(
     "Literal@%s@%.*s (%u, %u)",
     token_name_map[static_cast<unsigned short>(type)],
-    addtional_len, raw_literal, line, col);
+    addtional_len, raw_literal, pos.line, pos.col);
   else if(is_ident()) return utils::fmt(
     "Identifier@%s@%.*s (%u, %u)",
     token_name_map[static_cast<unsigned short>(type)],
-    addtional_len, raw_indent, line, col);
+    addtional_len, raw_indent, pos.line, pos.col);
   else return utils::fmt(
     "Token@%s (%u, %u)",
     token_name_map[static_cast<unsigned short>(type)],
-    line, col
+    pos.line, pos.col
   );
 
 }

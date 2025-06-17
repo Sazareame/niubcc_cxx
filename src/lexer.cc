@@ -44,8 +44,7 @@ Lexer::lex_one_token(){
   if(std::isalpha(*cur_ptr)) return lex_ident_or_kw(token);
 
   token.p_text = cur_ptr;
-  token.col = col;
-  token.line = line;
+  token.pos = {col, line};
   switch(*cur_ptr){
     case '(': token.type = TokenType::lparen; break;
     case ')': token.type = TokenType::rparen; break;
@@ -115,7 +114,7 @@ Lexer::lex_one_token(){
       }else token.type = TokenType::op_minus;
       break;
     case '_': return lex_ident_or_kw(token);
-    default: return LexerError("Unexpected character", col, line);
+    default: return LexerError("Unexpected character", {col, line});
   }
   ++cur_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
@@ -143,8 +142,7 @@ Lexer::lex_number(Token& token){
   while(std::isdigit(*cur_ptr)) ++cur_ptr;
   token.p_text = text_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
-  token.col = col;
-  token.line = line;
+  token.pos = {col, line};
   token.type = TokenType::li_int;
   token.raw_literal = text_ptr;
   token.addtional_len = token.len;
@@ -158,8 +156,7 @@ Lexer::lex_ident_or_kw(Token& token){
   while(is_valid_ident_char(*cur_ptr)) ++cur_ptr;
   token.p_text = text_ptr;
   token.len = static_cast<unsigned>(cur_ptr - text_ptr);
-  token.col = col;
-  token.line = line;
+  token.pos = {col, line};
   if(utils::string_equal(text_ptr, "int", token.len))
     token.type = TokenType::kw_int;
   else if(utils::string_equal(text_ptr, "return", token.len))
@@ -180,6 +177,8 @@ Lexer::lex_ident_or_kw(Token& token){
     token.type = TokenType::kw_break;
   else if(utils::string_equal(text_ptr, "continue", token.len))
     token.type = TokenType::kw_continue;
+  else if(utils::string_equal(text_ptr, "goto", token.len))
+    token.type = TokenType::kw_goto;
   else{
     token.type = TokenType::ident;
     token.raw_indent = text_ptr;
@@ -206,7 +205,7 @@ Lexer::get_tokens_out(){
 
 std::string
 LexerError::to_string()const{
-  return utils::fmt("Lexical Error at line %u, col %d: %s\n", line, col, msg);
+  return utils::fmt("Lexical Error at line %u, col %d: %s\n", pos.line, pos.col, msg);
 }
 
 void 

@@ -125,6 +125,7 @@ struct Constant: Val{
 class AstBuilder{
   unsigned tmp_val{0};
   std::unordered_map<Ptr<std::string>, unsigned> var_tmp_map{};
+  std::unordered_map<Ptr<std::string>, unsigned> label_map{};
   // for tmp var
   unsigned get_tmp_val(){
     return tmp_val++;
@@ -140,6 +141,12 @@ class AstBuilder{
   unsigned label_number{0};
   unsigned get_label(){
     return label_number++;
+  }
+  unsigned get_label(Ptr<std::string> label_name){
+    if(label_map.count(label_name)) return label_map[label_name];
+    auto label = get_label();
+    label_map[label_name] = label;
+    return label;
   }
 
   Ptr<Inst> cur_insts{0};
@@ -159,6 +166,7 @@ public:
   void build(Ptr<ast::CompoundStmt>);
   void build(Ptr<ast::IfStmt>);
   void build(Ptr<ast::ExprStmt>);
+  void build(Ptr<ast::GotoStmt>);
   Ptr<Val> build(Ptr<ast::Expr>);
   Ptr<Var> build(Ptr<ast::Unary>);
   Ptr<Var> build(Ptr<ast::Binary>);

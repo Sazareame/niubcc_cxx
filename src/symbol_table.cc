@@ -5,6 +5,11 @@
 namespace niubcc{
 
 std::string
+SymbolTable::make_label_name(char const* name, unsigned len){
+  return niubcc::utils::fmt(".userdefl%.*s.%u", len, name, label_num++);
+}
+
+std::string
 SymbolTable::make_tmp_name(char const* name, unsigned len){
   return niubcc::utils::fmt("%.*s.%u", len, name, tmp_num++);
 }
@@ -26,6 +31,41 @@ SymbolTable::lookup_and_get(const char* name, unsigned len){
     scope = scope->outer;
   }
   return 0;
+}
+
+std::shared_ptr<std::string>
+SymbolTable::define_label(const char* name, unsigned len, utils::Pos pos){
+  std::string_view look_name(name, len);
+  if(labels.count(look_name)){
+    if(labels[look_name].is_defined) return 0;
+    labels[look_name].is_defined = true;
+  }else{
+    labels[look_name] = LabelEntry{
+      .pos = pos,
+      .name = std::make_shared<std::string>(make_label_name(name, len)),
+      .is_defined = true,
+    };
+  }
+  return labels[look_name].name;
+}
+
+std::shared_ptr<std::string>
+SymbolTable::add_label(char const* name, unsigned len, utils::Pos pos){
+  std::string_view look_name(name, len);
+  if(labels.count(look_name)) return labels[look_name].name;
+  labels[look_name] = LabelEntry{
+    .pos = pos,
+    .name = std::make_shared<std::string>(make_label_name(name, len)),
+    .is_defined = false,
+  };
+  return labels[look_name].name;
+}
+
+std::optional<utils::Pos>
+SymbolTable::resolve_all_labels(){
+  for(auto& entry: labels)
+    if(!entry.second.is_defined) return entry.second.pos;
+  return std::nullopt; 
 }
 
 void

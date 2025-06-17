@@ -14,7 +14,7 @@ unsigned Parser::op_precedence[]{
 
 std::string
 ParseError::to_string()const{
-  return utils::fmt("Parse Error at line %u, col %u: %s", line, col, msg);
+  return utils::fmt("Parse Error at line %u, col %u: %s", pos.line, pos.col, msg);
 }
 
 void
@@ -89,25 +89,32 @@ Parser::parse_program(){
 Expected<Ptr<ast::FunctionDef>, ParseError>
 Parser::parse_funcdef(){
   if(!match(TokenType::kw_int))
-    return ParseError("Expected keyword int", 
-      get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected keyword int", get_cur_tok_pos());
 
   if(!match(TokenType::ident))
-    return ParseError("Expected function name",
-      get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected function name", get_cur_tok_pos());
   char const* name = tokens[tok_pos - 1].get_name();
   unsigned name_len = tokens[tok_pos - 1].get_name_len();
 
   if(!match(TokenType::lparen, TokenType::rparen, TokenType::punct_lbrace))
-    return ParseError("Syntax error", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Syntax error", get_cur_tok_pos());
+
+  symbol_table.call_func();
 
   auto body = parse_compoundstmt();
   if(body.is_err()) return body.unwrap_err();
 
   if(!next_is(TokenType::unknown)){
     return ParseError("Only support one main function defination",
-      get_cur_tok_col(), get_cur_tok_line());
+      get_cur_tok_pos());
   }
+
+  auto check_label = symbol_table.resolve_all_labels();
+  if(check_label.has_value()){
+    return ParseError("Use of undefined label", check_label.value());
+  }
+
+  symbol_table.ret_func();
 
   return std::make_shared<ast::FunctionDef>(name, name_len, body.unwrap());
 }
@@ -139,7 +146,7 @@ Parser::parse_block(){
 Expected<Ptr<ast::Decl>, ParseError>
 Parser::parse_decl(){
   if(!match(TokenType::kw_int))
-    return ParseError("Expected type specifier, for now it is int", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected type specifier, for now it is int", get_cur_tok_pos());
 
   auto res = parse_decl_init_list();
   if(res.is_err()) return res.unwrap_err();
@@ -154,7 +161,7 @@ Parser::parse_decl(){
   }
 
   if(!match(TokenType::punct_semicol))
-    return ParseError("Expected semicolumm after variable declatation", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected semicolumm after variable declatation", get_cur_tok_pos());
 
   return decl;
 }
@@ -162,12 +169,12 @@ Parser::parse_decl(){
 Expected<Ptr<ast::Decl>, ParseError>
 Parser::parse_decl_init_list(){
   if(!match(TokenType::ident))
-    return ParseError("Expected variable name", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected variable name", get_cur_tok_pos());
 
   char const* name = tokens[tok_pos - 1].get_name();
   unsigned len = tokens[tok_pos - 1].get_name_len();
   auto uniq_name = symbol_table.lookup_and_add(name, len);
-  if(!uniq_name) return ParseError("Duplicate declaration", get_cur_tok_col(), get_cur_tok_line());
+  if(!uniq_name) return ParseError("Duplicate declaration", get_cur_tok_pos());
 
   auto decl = std::make_shared<ast::Decl>(uniq_name);
   if(match(TokenType::op_assign)){
@@ -181,6 +188,20 @@ Parser::parse_decl_init_list(){
 
 Expected<Ptr<ast::Stmt>, ParseError>
 Parser::parse_stmt(){
+  if(next_is(TokenType::ident) && tokens[tok_pos + 1].get_type() == TokenType::punct_colon){
+    if(!symbol_table.is_in_func())
+      return ParseError("Can only define lable in functions", get_cur_tok_pos());
+    char const* name = tokens[tok_pos].get_name();
+    unsigned len = tokens[tok_pos].get_name_len();
+    auto label_name = symbol_table.define_label(name, len, get_cur_tok_pos());
+    if(!label_name) return ParseError("Redifine label", get_cur_tok_pos());
+    tok_pos += 2;
+    auto res = parse_stmt();
+    if(res.is_err()) return res.unwrap_err();
+    auto stmt = res.unwrap();
+    stmt->label = label_name;
+    return stmt;
+  }
   if(match(TokenType::kw_ret)){
     auto res = parse_retstmt();
     if(res.is_err()) return res.unwrap_err();
@@ -206,14 +227,19 @@ Parser::parse_stmt(){
     if(res.is_err()) return res.unwrap_err();
     return std::shared_ptr<ast::Stmt>(res.unwrap());
   }
+  if(match(TokenType::kw_goto)){
+    auto res = parse_gotostmt();
+    if(res.is_err()) return res.unwrap_err();
+    return std::shared_ptr<ast::Stmt>(res.unwrap());
+  }
   if(match(TokenType::kw_break)){
-    if(!loop_depth) return ParseError("Break statement outside loop", get_cur_tok_col(), get_cur_tok_line());
-    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    if(!loop_depth) return ParseError("Break statement outside loop", get_cur_tok_pos());
+    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_pos());
     return std::shared_ptr<ast::Stmt>(std::make_shared<ast::Break>());
   }
   if(match(TokenType::kw_continue)){
-    if(!loop_depth) return ParseError("Contiue statement outside loop", get_cur_tok_col(), get_cur_tok_line());
-    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    if(!loop_depth) return ParseError("Contiue statement outside loop", get_cur_tok_pos());
+    if(!match(TokenType::punct_semicol)) return ParseError("Expected semicolumn", get_cur_tok_pos());
     return std::shared_ptr<ast::Stmt>(std::make_shared<ast::Continue>());
   }
   if(match(TokenType::punct_semicol))
@@ -235,19 +261,19 @@ Parser::parse_dostmt(){
   if(stmt.is_err()) return stmt.unwrap_err();
 
   if(!match(TokenType::kw_while))
-    return ParseError("Expected keyword while after do-statement body", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected keyword while after do-statement body", get_cur_tok_pos());
 
   if(!match(TokenType::lparen))
-    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected left paranthesis", get_cur_tok_pos());
 
   auto condition = parse_expr();
   if(condition.is_err()) return condition.unwrap_err();
 
   if(!match(TokenType::rparen))
-    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right paranthesis", get_cur_tok_pos());
 
   if(!match(TokenType::punct_semicol))
-    return ParseError("Expected semicoloum", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected semicoloum", get_cur_tok_pos());
   
   --loop_depth;
   return std::make_shared<ast::DoStmt>(stmt.unwrap(), condition.unwrap());
@@ -256,13 +282,13 @@ Parser::parse_dostmt(){
 Expected<Ptr<ast::WhileStmt>, ParseError>
 Parser::parse_whilestmt(){
   if(!match(TokenType::lparen))
-    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected left paranthesis", get_cur_tok_pos());
 
   auto condition = parse_expr();
   if(condition.is_err()) return condition.unwrap_err();
 
   if(!match(TokenType::rparen))
-    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right paranthesis", get_cur_tok_pos());
 
   ++loop_depth;
   auto stmt = parse_stmt();
@@ -274,7 +300,7 @@ Parser::parse_whilestmt(){
 Expected<Ptr<ast::ForStmt>, ParseError>
 Parser::parse_forstmt(){
   if(!match(TokenType::lparen))
-    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected left paranthesis", get_cur_tok_pos());
 
   symbol_table.enter_scope();
 
@@ -289,7 +315,7 @@ Parser::parse_forstmt(){
     if(res.is_err()) return res.unwrap_err();
     condition = res.unwrap();
     if(!match(TokenType::punct_semicol))
-      return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+      return ParseError("Expected semicolumn", get_cur_tok_pos());
   }
 
   if(!match(TokenType::punct_semicol)){
@@ -299,7 +325,7 @@ Parser::parse_forstmt(){
   }
 
   if(!match(TokenType::rparen))
-    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right paranthesis", get_cur_tok_pos());
 
   ++loop_depth;
   auto stmt = parse_stmt();
@@ -322,8 +348,20 @@ Parser::parse_forinit(){
   auto res = parse_expr();
   if(res.is_err()) return res.unwrap_err();
   if(!match(TokenType::punct_semicol))
-    return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected semicolumn", get_cur_tok_pos());
   return std::make_shared<ast::ForStmtInit>(res.unwrap());
+}
+
+Expected<Ptr<ast::GotoStmt>, ParseError>
+Parser::parse_gotostmt(){
+  if(!match(TokenType::ident))
+    return ParseError("Expected label name", get_cur_tok_pos());
+  char const* name = tokens[tok_pos - 1].get_name();
+  unsigned len = tokens[tok_pos - 1].get_name_len();
+  auto label_name = symbol_table.add_label(name, len, get_cur_tok_pos());
+  if(!match(TokenType::punct_semicol))
+    return ParseError("Expected semicolumn", get_cur_tok_pos());
+  return std::make_shared<ast::GotoStmt>(label_name);
 }
 
 Expected<Ptr<ast::CompoundStmt>, ParseError>
@@ -347,7 +385,7 @@ Parser::parse_compoundstmt(){
 
   // Checking the closed right brace
   if(!match(TokenType::punct_rbrace))
-    return ParseError("Expected right brace after function body", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right brace after function body", get_cur_tok_pos());
 
   symbol_table.leave_scope();
   return std::make_shared<ast::CompoundStmt>(blocks);
@@ -356,13 +394,13 @@ Parser::parse_compoundstmt(){
 Expected<Ptr<ast::IfStmt>, ParseError>
 Parser::parse_ifstmt(){
   if(!match(TokenType::lparen))
-    return ParseError("Expected left paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected left paranthesis", get_cur_tok_pos());
   auto condition = parse_expr();
 
   if(condition.is_err()) return condition.unwrap_err();
 
   if(!match(TokenType::rparen))
-    return ParseError("Expected right paranthesis", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected right paranthesis", get_cur_tok_pos());
 
   auto then_stmt = parse_stmt();
   if(then_stmt.is_err()) return then_stmt.unwrap_err();
@@ -380,7 +418,7 @@ Parser::parse_exprstmt(){
   auto expr = parse_expr();
   if(expr.is_err()) return expr.unwrap_err();
   if(!match(TokenType::punct_semicol))
-    return ParseError("Expected semicolumn", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected semicolumn", get_cur_tok_pos());
   return std::make_shared<ast::ExprStmt>(expr.unwrap());
 }
 
@@ -392,7 +430,7 @@ Parser::parse_retstmt(){
 
   if(!match(TokenType::punct_semicol))
     return ParseError("Expected semicolumn",
-      get_cur_tok_col(), get_cur_tok_line());
+      get_cur_tok_pos());
 
   return std::make_shared<ast::RetStmt>(expr.unwrap());
 }
@@ -409,7 +447,7 @@ Parser::parse_expr(unsigned precedence){
   while(is_next_binary_op() && get_op_precedence(get_cur_tok_type()) >= precedence){
     if(match(TokenType::op_assign)){
       if(!std::dynamic_pointer_cast<ast::Var>(lhs))
-        return ParseError("Cannot assign to a rvalue", get_cur_tok_col(), get_cur_tok_line());
+        return ParseError("Cannot assign to a rvalue", get_cur_tok_pos());
       auto rhs = parse_expr(get_op_precedence(ast::OpType::op_assign));
       lhs = std::make_shared<ast::Assign>(rhs.unwrap(), lhs);
     }else if(match(TokenType::op_que)){
@@ -434,7 +472,7 @@ Parser::parse_condition(unsigned precedence){
   auto res = parse_expr();
   if(res.is_err()) return res.unwrap_err();
   if(!match(TokenType::punct_colon))
-    return ParseError("Expected colon in condition expression", get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected colon in condition expression", get_cur_tok_pos());
   return res.unwrap();
 }
 
@@ -443,10 +481,10 @@ Expected<Ptr<ast::Expr>, ParseError>
 Parser::parse_factor(){
   if(next_is(TokenType::op_decre))
     return ParseError("We do not support decrement operator yet",
-      get_cur_tok_col(), get_cur_tok_line());
+      get_cur_tok_pos());
   if(next_is(TokenType::op_incre))
     return ParseError("We do not support increment operator yet",
-      get_cur_tok_col(), get_cur_tok_line());
+      get_cur_tok_pos());
   if(is_next_unary_op()){
     auto unary = parse_unary();
     if(unary.is_err()) return unary.unwrap_err();
@@ -457,7 +495,7 @@ Parser::parse_factor(){
     auto expr = parse_expr();
     if(expr.is_err()) return expr.unwrap_err();
     if(!match(TokenType::rparen))
-      return ParseError("Expected )", get_cur_tok_col(), get_cur_tok_line());
+      return ParseError("Expected )", get_cur_tok_pos());
     return expr;
   }
 
@@ -465,13 +503,12 @@ Parser::parse_factor(){
     auto uniq_name = symbol_table.lookup_and_get(
       tokens[tok_pos - 1].get_name(), tokens[tok_pos - 1].get_name_len());
     if(!uniq_name)
-      return ParseError("Undefined Variable", get_cur_tok_col(), get_cur_tok_line());
+      return ParseError("Undefined Variable", get_cur_tok_pos());
     return std::shared_ptr<ast::Expr>(std::make_shared<ast::Var>(uniq_name));
   }
 
   if(!match(TokenType::li_int))
-    return ParseError("Expected expression",
-      get_cur_tok_col(), get_cur_tok_line());
+    return ParseError("Expected expression", get_cur_tok_pos());
   
   char const* val = tokens[tok_pos - 1].get_name();
   unsigned val_len = tokens[tok_pos - 1].get_name_len();

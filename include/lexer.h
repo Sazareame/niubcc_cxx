@@ -3,16 +3,16 @@
 #include <vector>
 #include <optional>
 #include "error.h"
+#include "utils.h"
 
 namespace niubcc{
 
 class LexerError: Error{
 private:
-  unsigned col;
-  unsigned line;
+  utils::Pos pos;
 public:
-  LexerError(char const* msg, unsigned col, unsigned line):
-  Error(msg), col(col), line(line){};
+  LexerError(char const* msg, utils::Pos pos):
+  Error(msg), pos(pos){};
   std::string to_string() const override;
 };
 
@@ -32,9 +32,7 @@ private:
   char const* p_text;
   TokenType type;
   unsigned len;
-  unsigned col;
-  unsigned line;
-
+  utils::Pos pos;
   union{
     char const* raw_literal;
     char const* raw_indent;
@@ -55,8 +53,7 @@ public:
   bool is_keyword()const;
   bool is_literal()const;
 
-  unsigned get_col()const{return col;};
-  unsigned get_line()const{return line;};
+  utils::Pos get_pos()const{return pos;}
   char const* get_name()const{
     if(type == TokenType::ident)
       return raw_indent;

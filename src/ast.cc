@@ -63,10 +63,12 @@ FunctionDef::print(unsigned depth=0){
 
 std::string
 CompoundStmt::print(unsigned depth=0){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
   std::string res = utils::fmt(
-    "Stmts(\n%s[",
+    "Stmts(label: %s\n%s[",
+    label_name.c_str(),
     indent.c_str()
   );
   auto cur_block = blocks;
@@ -80,10 +82,12 @@ CompoundStmt::print(unsigned depth=0){
 
 std::string
 RetStmt::print(unsigned depth=0){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
   return utils::fmt(
-    "ReturnStmt(\n%s%s\n%s)",
+    "ReturnStmt(Label:%s\n%s%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     ret_val->print(depth + 1).c_str(),
     end_indent.c_str()
@@ -92,13 +96,15 @@ RetStmt::print(unsigned depth=0){
 
 std::string
 IfStmt::print(unsigned depth=0){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
 
   std::string else_repr{"none"};
   if(else_stmt) else_repr = else_stmt->print(depth + 1);
   return utils::fmt(
-    "IfStmt(\n%scondition=%s\n%sthen=%s\n%selse=%s\n%s)",
+    "IfStmt(Label: %s\n%scondition=%s\n%sthen=%s\n%selse=%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     condition->print(depth + 1).c_str(),
     indent.c_str(),
@@ -107,6 +113,12 @@ IfStmt::print(unsigned depth=0){
     else_repr.c_str(),
     end_indent.c_str()
   );
+}
+
+std::string
+GotoStmt::print(unsigned depth){
+  auto label_name = label ? *label : "none";
+  return utils::fmt("GotoStmt(Label: %s target: %s)", label_name.c_str(), target->c_str());
 }
 
 std::string
@@ -153,14 +165,17 @@ Assign::print(unsigned depth=0){
 
 std::string
 NullStmt::print(unsigned depth=0){
-  return "NullStmt()";
+  auto label_name = label ? *label : "none";
+  return utils::fmt("NullStmt(Label: %s)", label_name.c_str());
 }
 
 std::string
 ExprStmt::print(unsigned depth=0){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
-  return utils::fmt("ExprStmt(\n%sexpr=%s\n%s)",
+  return utils::fmt("ExprStmt(Label: %s\n%sexpr=%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     expr->print(depth + 1).c_str(),
     end_indent.c_str()
@@ -184,9 +199,11 @@ Decl::print(unsigned depth=0){
 
 std::string
 DoStmt::print(unsigned depth){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
-  return utils::fmt("Do(\n%sstmts=%s\n%scondition=%s\n%s)",
+  return utils::fmt("Do(Label: %s\n%sstmts=%s\n%scondition=%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     stmt->print(depth + 1).c_str(),
     indent.c_str(),
@@ -197,9 +214,11 @@ DoStmt::print(unsigned depth){
 
 std::string
 WhileStmt::print(unsigned depth){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
-  return utils::fmt("While(\n%sstmts=%s\n%scondition=%s\n%s)",
+  return utils::fmt("While(Label: %s\n%sstmts=%s\n%scondition=%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     stmt->print(depth + 1).c_str(),
     indent.c_str(),
@@ -228,6 +247,7 @@ ForStmtInit::print(unsigned depth){
 
 std::string
 ForStmt::print(unsigned depth){
+  auto label_name = label ? *label : "none";
   auto indent = std::string(depth + 1, '\t');
   auto end_indent = std::string(depth, '\t');
 
@@ -238,7 +258,8 @@ ForStmt::print(unsigned depth){
   if(condition) cond_repr = condition->print(depth + 1);
   if(post) post_repr = post->print(depth + 1);
 
-  return utils::fmt("For(\n%sinit=%s\n%scondition=%s\n%spost=%s\n%sstmt=%s\n%s)",
+  return utils::fmt("For(Label: %s\n%sinit=%s\n%scondition=%s\n%spost=%s\n%sstmt=%s\n%s)",
+    label_name.c_str(),
     indent.c_str(),
     init_repr.c_str(),
     indent.c_str(),
@@ -253,12 +274,14 @@ ForStmt::print(unsigned depth){
 
 std::string
 Break::print(unsigned depth){
-  return utils::fmt("Break()\n");
+  auto label_name = label ? *label : "none";
+  return utils::fmt("Break(Label: %s)\n", label_name.c_str());
 }
 
 std::string
 Continue::print(unsigned depth){
-  return utils::fmt("Continue()\n");
+  auto label_name = label ? *label : "none";
+  return utils::fmt("Continue(Label: %s)\n", label_name.c_str());
 }
 
 }
